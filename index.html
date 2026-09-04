@@ -661,39 +661,100 @@ svg.leaflet-zoom-animated{will-change:transform}
     });
     return starts.concat(contains).slice(0, limit || 8);
   }
+  // Base Adresse Nationale (api-adresse.data.gouv.fr) — free, no API key,
+  // full national address database. Only reachable when this page is
+  // self-hosted outside the Artifact sandbox (fetch to external hosts is
+  // blocked there). Resolves to `null` when the call fails/times out
+  // (network error OR a silently-swallowed CSP block) so callers can fall
+  // back to the small embedded dataset — vs. an empty array, which means
+  // "reached the API, no match". A manual timeout race guards against CSP
+  // blocks that never fire a rejection at all.
+  function banSearch(query, opts){
+    opts = opts || {};
+    const q = String(query || '').trim();
+    if (q.length < 3) return Promise.resolve([]);
+    const params = new URLSearchParams({ q, limit: String(opts.limit || 6), autocomplete: '1' });
+    if (opts.type) params.set('type', opts.type);
+    const url = 'https://api-adresse.data.gouv.fr/search/?' + params.toString();
+    const fetchP = fetch(url, { headers: { Accept: 'application/json' } })
+      .then(r => r.ok ? r.json() : Promise.reject(new Error('ban-http-' + r.status)))
+      .then(data => (data.features || []).map(f => ({
+        label: f.properties.label,
+        rue: f.properties.name || '',
+        cp: f.properties.postcode || '',
+        ville: f.properties.city || f.properties.name || '',
+        lat: f.geometry && f.geometry.coordinates ? f.geometry.coordinates[1] : null,
+        lng: f.geometry && f.geometry.coordinates ? f.geometry.coordinates[0] : null,
+      })));
+    const timeoutP = new Promise((_, reject) => setTimeout(() => reject(new Error('ban-timeout')), opts.timeoutMs || 3500));
+    return Promise.race([fetchP, timeoutP]).catch(() => null);
+  }
+
+  // Writes resolved address/geo values into both S.draft and the visible
+  // form inputs, then refreshes the cadastral panel if the coordinates
+  // changed (programmatic .value writes don't fire native 'input' events).
+  function setAdresseFields(vals){
+    const d = S.draft;
+    if (vals.rue !== undefined){ d.adresse.rue = vals.rue; const el = document.getElementById('f-rue'); if (el) el.value = vals.rue; }
+    if (vals.cp !== undefined){ d.adresse.cp = vals.cp; const el = document.getElementById('f-cp'); if (el) el.value = vals.cp; }
+    if (vals.ville !== undefined){ d.adresse.ville = vals.ville; const el = document.getElementById('f-ville'); if (el) el.value = vals.ville; }
+    let geoChanged = false;
+    if (vals.lat != null && isFinite(vals.lat)){ d.lat = String(vals.lat); const el = document.getElementById('f-lat'); if (el) el.value = d.lat; geoChanged = true; }
+    if (vals.lng != null && isFinite(vals.lng)){ d.lng = String(vals.lng); const el = document.getElementById('f-lng'); if (el) el.value = d.lng; geoChanged = true; }
+    if (geoChanged) renderGeoPreview();
+  }
+
   function attachAddressAutocomplete(){
+    const rueInput = document.getElementById('f-rue');
     const cpInput = document.getElementById('f-cp');
     const villeInput = document.getElementById('f-ville');
+    const rueList = document.getElementById('ac-rue');
     const cpList = document.getElementById('ac-cp');
     const villeList = document.getElementById('ac-ville');
     if (!cpInput || !villeInput || !cpList || !villeList) return;
 
-    function closeAll(){ cpList.hidden = true; villeList.hidden = true; }
+    function closeAll(){ [rueList, cpList, villeList].forEach(l => { if (l) l.hidden = true; }); }
 
-    function wire(input, listEl){
-      let items = [], active = -1;
+    function debounce(fn, ms){
+      let t = null;
+      return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
+    }
+
+    // Generic autocomplete wiring: `resolver(query)` returns an array or a
+    // Promise<array> of `{label, sub, data}`; `onPick(data)` applies a
+    // chosen suggestion.
+    function wire(input, listEl, resolver, onPick){
+      if (!input || !listEl) return;
+      let items = [], active = -1, reqId = 0;
+
       function paint(){
         const els = listEl.querySelectorAll('.ac-item');
         els.forEach((el,i) => el.classList.toggle('active', i===active));
       }
-      function open(){
-        items = matchCommunes(input.value);
+      function renderItems(list){
+        items = list || [];
         active = -1;
-        if (!items.length){ listEl.hidden = true; listEl.innerHTML=''; return; }
+        if (!items.length){ listEl.hidden = true; listEl.innerHTML = ''; return; }
         listEl.innerHTML = items.map((it,i) =>
-          `<div class="ac-item" data-i="${i}"><span>${esc(it[1])}</span><span class="ac-cp">${esc(it[0])}</span></div>`
+          `<div class="ac-item" data-i="${i}"><span>${esc(it.label)}</span>${it.sub ? `<span class="ac-cp">${esc(it.sub)}</span>` : ''}</div>`
         ).join('');
         listEl.hidden = false;
       }
       function pick(it){
-        cpInput.value = it[0];
-        villeInput.value = it[1];
-        S.draft.adresse.cp = it[0];
-        S.draft.adresse.ville = it[1];
+        onPick(it.data);
         closeAll();
       }
-      input.addEventListener('input', open);
-      input.addEventListener('focus', () => { if (input.value) open(); });
+      const doSearch = debounce((q) => {
+        const myReq = ++reqId;
+        Promise.resolve(resolver(q)).then(list => { if (myReq === reqId) renderItems(list); });
+      }, 220);
+
+      input.addEventListener('input', () => {
+        const q = input.value;
+        if (!q || q.trim().length < 2){ listEl.hidden = true; return; }
+        doSearch(q);
+      });
+      input.addEventListener('focus', () => { if (input.value && input.value.trim().length >= 2) doSearch(input.value); });
       input.addEventListener('keydown', (e) => {
         if (listEl.hidden) return;
         if (e.key === 'ArrowDown'){ e.preventDefault(); active = Math.min(active+1, items.length-1); paint(); }
@@ -709,8 +770,30 @@ svg.leaflet-zoom-animated{will-change:transform}
         pick(items[Number(item.dataset.i)]);
       });
     }
-    wire(cpInput, cpList);
-    wire(villeInput, villeList);
+
+    // Ville / Code postal: try the national BAN database first, fall back
+    // to the small embedded city list when BAN is unreachable (e.g. the
+    // sandboxed Artifact preview) or returns nothing.
+    function communeResolver(q){
+      return banSearch(q, { type: 'municipality', limit: 7 }).then(res => {
+        if (res && res.length) return res.map(r => ({ label: r.ville, sub: r.cp, data: r }));
+        return matchCommunes(q).map(([cp,ville]) => ({ label: ville, sub: cp, data: { cp, ville } }));
+      });
+    }
+    function communePick(data){
+      setAdresseFields({ cp: data.cp, ville: data.ville, lat: data.lat, lng: data.lng });
+    }
+    wire(cpInput, cpList, communeResolver, communePick);
+    wire(villeInput, villeList, communeResolver, communePick);
+
+    // Adresse (rue, n°): full national address search via BAN. No local
+    // dataset exists at street level, so this only produces suggestions
+    // when BAN is actually reachable (i.e. self-hosted, not the Artifact
+    // preview) — the field still works as a plain text input otherwise.
+    if (rueInput && rueList){
+      wire(rueInput, rueList, (q) => banSearch(q, { limit: 6 }).then(res => (res || []).map(r => ({ label: r.label, sub: '', data: r }))),
+        (data) => setAdresseFields({ rue: data.rue, cp: data.cp, ville: data.ville, lat: data.lat, lng: data.lng }));
+    }
   }
 
   /* ============================= SEED DATA ============================= */
@@ -1169,7 +1252,10 @@ svg.leaflet-zoom-animated{will-change:transform}
           <div class="section-desc">Adresse postale, coordonnées GPS et référence cadastrale du site.</div>
           <div class="grid g2" style="margin-top:16px; align-items:start;">
             <div class="stack" style="gap:14px;">
-              <div class="field"><label>Adresse (rue, n°)</label><input type="text" name="adresse.rue" value="${esc(d.adresse.rue)}"/></div>
+              <div class="field ac-wrap"><label>Adresse (rue, n°)</label>
+                <input type="text" name="adresse.rue" id="f-rue" value="${esc(d.adresse.rue)}" autocomplete="off"/>
+                <div class="ac-list" id="ac-rue" hidden></div>
+              </div>
               <div class="grid g2">
                 <div class="field ac-wrap"><label>Code postal</label>
                   <input class="mono-input" type="text" name="adresse.cp" id="f-cp" value="${esc(d.adresse.cp)}" autocomplete="off"/>
@@ -1181,8 +1267,8 @@ svg.leaflet-zoom-animated{will-change:transform}
                 </div>
               </div>
               <div class="grid g2">
-                <div class="field"><label>Latitude</label><input class="mono-input" type="text" name="lat" value="${esc(d.lat)}" placeholder="48.1147"/></div>
-                <div class="field"><label>Longitude</label><input class="mono-input" type="text" name="lng" value="${esc(d.lng)}" placeholder="-1.6794"/></div>
+                <div class="field"><label>Latitude</label><input class="mono-input" type="text" name="lat" id="f-lat" value="${esc(d.lat)}" placeholder="48.1147"/></div>
+                <div class="field"><label>Longitude</label><input class="mono-input" type="text" name="lng" id="f-lng" value="${esc(d.lng)}" placeholder="-1.6794"/></div>
               </div>
               <div class="field"><label>Référence cadastrale <span class="hint">section / parcelle</span></label>
                 <input class="mono-input" type="text" name="refCadastrale" value="${esc(d.refCadastrale)}" placeholder="035/CR/0248"/></div>
