@@ -315,18 +315,20 @@
   .section-title{ font-family:var(--font-display); font-weight:800; font-size:15px; }
   .section-desc{ font-size:12px; color:var(--ink-muted); margin:2px 0 0 31px; }
 
-  /* Vanne balancing table */
-  .vanne-table{ min-width:1120px; }
-  .vanne-table th, .vanne-table td{ padding:6px 7px; white-space:nowrap; }
+  /* Vanne balancing table — tightened so it fits without horizontal
+     scrolling on a normal laptop width; .table-scroll stays as a safety
+     net for narrower windows. */
+  .vanne-table{ min-width:0; width:100%; table-layout:fixed; }
+  .vanne-table th, .vanne-table td{ padding:4px 3px; white-space:nowrap; }
   .vanne-table thead tr:first-child th{ border-bottom:1px solid var(--line); }
-  .vanne-table thead tr:last-child th{ font-size:10px; font-weight:600; color:var(--ink-muted); text-transform:none; letter-spacing:0; }
-  .vanne-table th.grp{ text-align:center; font-size:10.5px; letter-spacing:0.04em; border-radius:4px 4px 0 0; }
+  .vanne-table thead tr:last-child th{ font-size:9.5px; font-weight:600; color:var(--ink-muted); text-transform:none; letter-spacing:0; }
+  .vanne-table th.grp{ text-align:center; font-size:10px; letter-spacing:0.03em; border-radius:4px 4px 0 0; }
   .vanne-table th.grp-avant{ background:var(--cold-soft); color:var(--cold); }
   .vanne-table th.grp-apres{ background:var(--warm-soft); color:var(--warm); }
-  .vanne-table input, .vanne-table select{ padding:5px 6px; font-size:12.5px; }
-  .vanne-table .rm-btn{ background:none; border:none; color:var(--ink-muted); cursor:pointer; padding:4px; }
+  .vanne-table input, .vanne-table select{ padding:4px 3px; font-size:11.5px; width:100%; box-sizing:border-box; }
+  .vanne-table .rm-btn{ background:none; border:none; color:var(--ink-muted); cursor:pointer; padding:2px; }
   .vanne-table .rm-btn:hover{ color:var(--critical); }
-  .vanne-table .delta-cell{ text-align:center; }
+  .vanne-table .delta-cell{ text-align:center; font-size:11.5px; }
 
   .report-vanne-table th.grp-avant{ background:var(--cold-soft); color:var(--cold); }
   .report-vanne-table th.grp-apres{ background:var(--warm-soft); color:var(--warm); }
@@ -1408,6 +1410,13 @@ svg.leaflet-zoom-animated{will-change:transform}
           <div class="section-desc">Repérage, réglages et débits mesurés avant / après équilibrage, par vanne.</div>
           <div class="table-scroll" style="margin-top:16px;">
             <table class="vanne-table" id="vanne-table">
+              <colgroup>
+                <col style="width:7%"/><col style="width:7%"/><col style="width:12%"/><col style="width:5%"/><col style="width:5%"/>
+                <col style="width:7%"/><col style="width:5%"/><col style="width:5%"/><col style="width:5%"/><col style="width:4%"/>
+                <col style="width:8%"/>
+                <col style="width:7%"/><col style="width:5%"/><col style="width:5%"/><col style="width:5%"/><col style="width:4%"/>
+                <col style="width:4%"/>
+              </colgroup>
               <thead>
                 <tr>
                   <th rowspan="2">Repérage<br/>vanne</th>
@@ -1611,26 +1620,26 @@ svg.leaflet-zoom-animated{will-change:transform}
     const num = v => v==null ? '' : v;
     body.innerHTML = d.vannes.map((v, i) => `
       <tr data-vrow="${i}">
-        <td><input type="text" data-k="reperage" value="${esc(v.reperage)}" placeholder="T1" style="width:64px;"/></td>
+        <td><input type="text" data-k="reperage" value="${esc(v.reperage)}" placeholder="T1"/></td>
         <td>
-          <select data-k="sonde" style="width:78px;">
+          <select data-k="sonde">
             <option value="oui" ${v.sonde==='oui'?'selected':''}>Oui</option>
             <option value="non" ${v.sonde==='non'?'selected':''}>Non</option>
           </select>
         </td>
-        <td><input type="text" data-k="marque" value="${esc(v.marque)}" style="width:88px;"/></td>
-        <td><input type="text" data-k="type" value="${esc(v.type)}" style="width:64px;"/></td>
-        <td><input class="mono-input" type="text" data-k="dn" value="${esc(v.dn)}" style="width:52px;"/></td>
-        <td><input class="mono-input" type="number" step="0.1" data-k="avant.debit" value="${num(v.avant.debit)}" style="width:70px;"/></td>
-        <td><input class="mono-input" type="number" step="1" data-k="avant.tours" value="${num(v.avant.tours)}" style="width:60px;"/></td>
-        <td><input class="mono-input" type="number" step="0.1" data-k="avant.tDepart" value="${num(v.avant.tDepart)}" style="width:64px;"/></td>
-        <td><input class="mono-input" type="number" step="0.1" data-k="avant.tRetour" value="${num(v.avant.tRetour)}" style="width:64px;"/></td>
+        <td><input type="text" data-k="marque" value="${esc(v.marque)}"/></td>
+        <td><input type="text" data-k="type" value="${esc(v.type)}"/></td>
+        <td><input class="mono-input" type="text" data-k="dn" value="${esc(v.dn)}"/></td>
+        <td><input class="mono-input" type="number" step="0.1" data-k="avant.debit" value="${num(v.avant.debit)}"/></td>
+        <td><input class="mono-input" type="number" step="1" data-k="avant.tours" value="${num(v.avant.tours)}"/></td>
+        <td><input class="mono-input" type="number" step="0.1" data-k="avant.tDepart" value="${num(v.avant.tDepart)}"/></td>
+        <td><input class="mono-input" type="number" step="0.1" data-k="avant.tRetour" value="${num(v.avant.tRetour)}"/></td>
         <td class="delta-cell" data-delta="avant">${deltaCellHtml(v.avant.tDepart, v.avant.tRetour)}</td>
-        <td><input class="mono-input" type="number" step="0.1" data-k="debitTheoriqueVise" value="${num(v.debitTheoriqueVise)}" style="width:78px;"/></td>
-        <td><input class="mono-input" type="number" step="0.1" data-k="apres.debit" value="${num(v.apres.debit)}" style="width:70px;"/></td>
-        <td><input class="mono-input" type="number" step="1" data-k="apres.tours" value="${num(v.apres.tours)}" style="width:60px;"/></td>
-        <td><input class="mono-input" type="number" step="0.1" data-k="apres.tDepart" value="${num(v.apres.tDepart)}" style="width:64px;"/></td>
-        <td><input class="mono-input" type="number" step="0.1" data-k="apres.tRetour" value="${num(v.apres.tRetour)}" style="width:64px;"/></td>
+        <td><input class="mono-input" type="number" step="0.1" data-k="debitTheoriqueVise" value="${num(v.debitTheoriqueVise)}"/></td>
+        <td><input class="mono-input" type="number" step="0.1" data-k="apres.debit" value="${num(v.apres.debit)}"/></td>
+        <td><input class="mono-input" type="number" step="1" data-k="apres.tours" value="${num(v.apres.tours)}"/></td>
+        <td><input class="mono-input" type="number" step="0.1" data-k="apres.tDepart" value="${num(v.apres.tDepart)}"/></td>
+        <td><input class="mono-input" type="number" step="0.1" data-k="apres.tRetour" value="${num(v.apres.tRetour)}"/></td>
         <td class="delta-cell" data-delta="apres">${deltaCellHtml(v.apres.tDepart, v.apres.tRetour)}</td>
         <td><button type="button" class="rm-btn" data-rmv="${i}">${icon('x')}</button></td>
       </tr>
