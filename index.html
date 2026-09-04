@@ -376,6 +376,38 @@
   }
   .photo-slot .cap button{ background:none; border:none; color:#fff; font-size:10px; cursor:pointer; text-decoration:underline; }
 
+  /* Photos complémentaires (vannes, équipements…) — liste ouverte, avec
+     horodatage/adresse/coordonnées superposés sur chaque vignette. */
+  .photo-extra-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:14px; align-items:start; }
+  @media (max-width:760px){ .photo-extra-grid{ grid-template-columns:1fr; } }
+  .photo-extra-card{ display:flex; flex-direction:column; gap:6px; }
+  .photo-extra-thumb{
+    position:relative; aspect-ratio:4/3; border-radius:10px; overflow:hidden;
+    background:var(--surface-2); border:1px solid var(--line);
+  }
+  .photo-extra-thumb img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+  .photo-extra-thumb .geostamp{
+    position:absolute; left:0; right:0; bottom:0; padding:16px 9px 7px;
+    background:linear-gradient(to top, rgba(8,10,10,.78), rgba(8,10,10,.5) 55%, transparent);
+    pointer-events:none;
+  }
+  .photo-extra-thumb .geostamp .gs-line{
+    font-size:9.5px; line-height:1.4; color:#fff; text-shadow:0 1px 2px rgba(0,0,0,.6);
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .photo-extra-thumb .geostamp .gs-date{ font-weight:700; letter-spacing:.02em; }
+  .photo-extra-thumb .geostamp .gs-coords{ font-family:var(--font-mono); opacity:.92; }
+  .photo-extra-rm{
+    position:absolute; top:6px; right:6px; width:22px; height:22px; border-radius:50%;
+    background:rgba(10,14,15,.6); border:none; color:#fff; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .photo-extra-rm svg{ width:12px; height:12px; }
+  .photo-extra-rm:hover{ background:rgba(190,40,40,.85); }
+  .photo-extra-label{ font-size:11.5px; padding:6px 8px; }
+  .photo-extra-add .ps{ font-size:9.5px; }
+  .report-photo-caption{ font-size:11px; color:var(--ink-secondary); font-weight:600; padding:0 1px; }
+
   .form-actions{
     display:flex; justify-content:flex-end; gap:10px; padding-top:6px;
   }
@@ -567,6 +599,19 @@ svg.leaflet-zoom-animated{will-change:transform}
   function uid(p){ return (p||'d') + '_' + Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
   function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
   function fmt1(n){ return (Math.round(n*10)/10).toFixed(1); }
+  // Adresse postale complète (rue — CP Ville), parties vides omises.
+  function fullAddress(d){
+    const a = (d && d.adresse) || {};
+    return [a.rue, [a.cp, a.ville].filter(Boolean).join(' ')].filter(Boolean).join(' — ');
+  }
+  // "JJ/MM/AAAA HH:MM" à partir d'un ISO string — utilisé pour l'horodatage
+  // superposé sur les photos complémentaires.
+  function fmtDateTimeFR(iso){
+    const dt = iso ? new Date(iso) : null;
+    if (!dt || isNaN(dt.getTime())) return '';
+    const p = n => String(n).padStart(2,'0');
+    return `${p(dt.getDate())}/${p(dt.getMonth()+1)}/${dt.getFullYear()} ${p(dt.getHours())}:${p(dt.getMinutes())}`;
+  }
   function toast(msg){
     const t = document.getElementById('toast');
     t.textContent = msg; t.classList.add('show');
@@ -929,6 +974,7 @@ svg.leaflet-zoom-animated{will-change:transform}
           { id:'lp3', date:'12/12/1121', heure:'12:12:00', tExt:20, amb:[19,18,17,21,20], ecartMax:1 },
         ],
         photos:{ batiment:'', chaufferie:'', temperature:'' },
+        photosExtra:[],
         notes:'Réseau CPCU, calorifugeage des colonnes montantes et du sous-sol réalisé sur 3 jours.',
         createdAt: Date.now() - 1000*60*60*24*20,
       },
@@ -945,6 +991,7 @@ svg.leaflet-zoom-animated{will-change:transform}
         vannes:[],
         pointsTemp:[], logsAvant:[], logsApres:[],
         photos:{ batiment:'', chaufferie:'', temperature:'' },
+        photosExtra:[],
         notes:'',
         createdAt: Date.now() - 1000*60*60*24*2,
       },
@@ -982,6 +1029,7 @@ svg.leaflet-zoom-animated{will-change:transform}
       pointsTemp:[ emptyPointTemp() ],
       logsAvant:[], logsApres:[],
       photos:{ batiment:'', chaufferie:'', temperature:'' },
+      photosExtra:[],
       notes:'',
       createdAt: Date.now(),
     };
@@ -1093,6 +1141,7 @@ svg.leaflet-zoom-animated{will-change:transform}
     if (!Array.isArray(d.pointsTemp)) d.pointsTemp = [];
     if (!Array.isArray(d.logsAvant)) d.logsAvant = [];
     if (!Array.isArray(d.logsApres)) d.logsApres = [];
+    if (!Array.isArray(d.photosExtra)) d.photosExtra = [];
     d.logsAvant.forEach(r => { if (!Array.isArray(r.amb)) r.amb = [null,null,null,null,null]; });
     d.logsApres.forEach(r => { if (!Array.isArray(r.amb)) r.amb = [null,null,null,null,null]; });
     return d;
@@ -1490,7 +1539,22 @@ svg.leaflet-zoom-animated{will-change:transform}
 
         <div class="panel">
           <span class="tick-bl"></span><span class="tick-br"></span>
-          <div class="section-head"><div class="section-num">11</div><div class="section-title">Notes</div></div>
+          <div class="section-head"><div class="section-num">11</div><div class="section-title">Photos complémentaires</div></div>
+          <div class="section-desc">Vannes, équipements ou tout autre élément à documenter — date, adresse et coordonnées GPS ajoutées automatiquement en superposition sur chaque photo.</div>
+          <div class="photo-extra-grid" style="margin-top:16px;" id="photo-extra-grid">
+            ${(d.photosExtra||[]).map((p,i) => photoExtraCard(p, i, d)).join('')}
+            <label class="photo-slot photo-extra-add">
+              ${icon('camera')}
+              <div class="pl">Ajouter des photos</div>
+              <div class="ps">Vannes, équipements…</div>
+              <input type="file" accept="image/*" multiple id="photo-extra-input"/>
+            </label>
+          </div>
+        </div>
+
+        <div class="panel">
+          <span class="tick-bl"></span><span class="tick-br"></span>
+          <div class="section-head"><div class="section-num">12</div><div class="section-title">Notes</div></div>
           <div class="field" style="margin-top:14px;">
             <textarea name="notes" placeholder="Observations, réseau de chauffage, travaux réalisés…">${esc(d.notes)}</textarea>
           </div>
@@ -1537,7 +1601,7 @@ svg.leaflet-zoom-animated{will-change:transform}
       if (input) input.addEventListener('input', () => { d[name] = input.value; renderGeoPreview(); });
     });
 
-    main.querySelectorAll('.photo-slot input[type=file]').forEach(inp => {
+    main.querySelectorAll('.photo-slot input[type=file][data-field]').forEach(inp => {
       inp.addEventListener('change', async (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -1555,6 +1619,38 @@ svg.leaflet-zoom-animated{will-change:transform}
         renderFormInto();
       });
     });
+
+    // Photos complémentaires : ajout multiple, légende par photo, suppression.
+    const photoExtraInput = document.getElementById('photo-extra-input');
+    if (photoExtraInput){
+      photoExtraInput.addEventListener('change', async (e) => {
+        const files = Array.from(e.target.files || []);
+        if (!files.length) return;
+        for (const file of files){
+          try{
+            const dataUrl = await compressImage(file);
+            d.photosExtra.push({ id: uid('ph'), dataUrl, label:'', capturedAt: new Date().toISOString() });
+          }catch(err){ toast('Impossible de lire une des images.'); }
+        }
+        renderFormInto();
+      });
+    }
+    const photoExtraGrid = document.getElementById('photo-extra-grid');
+    if (photoExtraGrid){
+      photoExtraGrid.addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-rmphoto]');
+        if (!btn) return;
+        e.preventDefault();
+        d.photosExtra.splice(Number(btn.dataset.rmphoto), 1);
+        renderFormInto();
+      });
+      photoExtraGrid.addEventListener('input', (e) => {
+        const inp = e.target.closest('[data-labelphoto]');
+        if (!inp) return;
+        const i = Number(inp.dataset.labelphoto);
+        if (d.photosExtra[i]) d.photosExtra[i].label = inp.value;
+      });
+    }
 
     document.getElementById('dossier-form').addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -1581,6 +1677,53 @@ svg.leaflet-zoom-animated{will-change:transform}
       <div class="ps">Cliquer pour importer</div>
       <input type="file" accept="image/*" data-field="${field}"/>
     </label>`;
+  }
+
+  // Vignette d'une photo complémentaire (vannes, équipements…), avec la
+  // date de prise de vue, l'adresse complète et les coordonnées GPS du
+  // dossier superposées en incrustation — cohérent avec le "plan cadastral"
+  // et le reste du dossier, ces deux dernières valeurs restent à jour même
+  // si l'adresse est modifiée après l'ajout de la photo.
+  // Incrustation date / adresse / coordonnées commune aux deux rendus
+  // (formulaire éditable et rapport en lecture seule) d'une photo
+  // complémentaire.
+  function geostampHtml(p, d){
+    const dateStr = fmtDateTimeFR(p.capturedAt);
+    const addr = fullAddress(d);
+    const lat = parseFloat(d.lat), lng = parseFloat(d.lng);
+    const coords = (isFinite(lat) && isFinite(lng)) ? `${lat.toFixed(5)}, ${lng.toFixed(5)}` : '';
+    return `
+    <div class="geostamp">
+      ${dateStr ? `<div class="gs-line gs-date">${esc(dateStr)}</div>` : ''}
+      ${addr ? `<div class="gs-line gs-addr">${esc(addr)}</div>` : ''}
+      ${coords ? `<div class="gs-line gs-coords">${esc(coords)}</div>` : ''}
+      ${(!addr && !coords) ? `<div class="gs-line gs-addr">Adresse / GPS non renseignés</div>` : ''}
+    </div>`;
+  }
+
+  function photoExtraCard(p, i, d){
+    return `
+    <div class="photo-extra-card">
+      <div class="photo-extra-thumb">
+        <img src="${p.dataUrl}" alt="${esc(p.label || 'Photo')}"/>
+        ${geostampHtml(p, d)}
+        <button type="button" class="photo-extra-rm" data-rmphoto="${i}" title="Retirer cette photo">${icon('x')}</button>
+      </div>
+      <input type="text" class="photo-extra-label" data-labelphoto="${i}" value="${esc(p.label||'')}" placeholder="Légende (ex. Vanne T2 — sous-sol)"/>
+    </div>`;
+  }
+
+  // Version lecture seule (rapport) : même incrustation, pas de bouton
+  // supprimer ni de champ de légende éditable.
+  function photoExtraFig(p, d){
+    return `
+    <div class="photo-extra-card">
+      <div class="photo-extra-thumb">
+        <img src="${p.dataUrl}" alt="${esc(p.label || 'Photo')}"/>
+        ${geostampHtml(p, d)}
+      </div>
+      ${p.label ? `<div class="report-photo-caption">${esc(p.label)}</div>` : ''}
+    </div>`;
   }
 
   async function compressImage(file, maxDim, quality){
@@ -2189,6 +2332,12 @@ svg.leaflet-zoom-animated{will-change:transform}
           ${photoFig('Chaufferie', d.photos.chaufferie)}
           ${photoFig('Température extérieure', d.photos.temperature)}
         </div>
+        ${(d.photosExtra||[]).length ? `
+        <div class="panel-title" style="margin-top:22px;">Photos complémentaires</div>
+        <div class="photo-extra-grid">
+          ${d.photosExtra.map(p => photoExtraFig(p, d)).join('')}
+        </div>
+        ` : ''}
         ${d.notes ? `<div class="geo-caption" style="margin-top:16px; font-size:12.5px; color:var(--ink-secondary);">${esc(d.notes)}</div>` : ''}
       </div>
     `;
