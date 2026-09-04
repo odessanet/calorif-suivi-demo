@@ -408,6 +408,28 @@
   .photo-extra-add .ps{ font-size:9.5px; }
   .report-photo-caption{ font-size:11px; color:var(--ink-secondary); font-weight:600; padding:0 1px; }
 
+  /* Schéma synoptique hydraulique — champs (+ dictée vocale) et aperçu SVG */
+  .synop-fields{ display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
+  @media (max-width:760px){ .synop-fields{ grid-template-columns:1fr; } }
+  .synop-field-row{ display:flex; gap:6px; }
+  .synop-field-row input{ flex:1; min-width:0; }
+  .mic-btn{
+    flex:0 0 auto; width:38px; border-radius:8px; border:1px solid var(--line-strong);
+    background:var(--surface-2); color:var(--ink-secondary); cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .mic-btn svg{ width:16px; height:16px; }
+  .mic-btn:hover{ border-color:var(--accent); color:var(--accent); }
+  .mic-btn.listening{ background:var(--critical); border-color:var(--critical); color:#fff; animation:mic-pulse 1.1s ease-in-out infinite; }
+  .mic-btn:disabled{ opacity:.4; cursor:not-allowed; }
+  @keyframes mic-pulse{ 0%,100%{ box-shadow:0 0 0 0 rgba(200,60,60,.45); } 50%{ box-shadow:0 0 0 6px rgba(200,60,60,0); } }
+  .synop-hint{ font-size:11px; color:var(--ink-muted); margin-top:8px; }
+  .synop-preview{
+    margin-top:16px; padding:14px; border-radius:10px; border:1px solid var(--line);
+    background:#fff; overflow-x:auto;
+  }
+  .synop-preview svg{ display:block; height:auto; }
+
   .form-actions{
     display:flex; justify-content:flex-end; gap:10px; padding-top:6px;
   }
@@ -592,6 +614,7 @@ svg.leaflet-zoom-animated{will-change:transform}
     ext:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 4h6v6M20 4 10 14"/><path d="M18 13v6a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h6"/></svg>',
     photo:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3.25" y="4.5" width="17.5" height="15" rx="2.2"/><circle cx="8.7" cy="9.6" r="1.4"/><path d="M4.3 16.8l4.6-4.4a1.5 1.5 0 0 1 2 0L15 16.2"/><path d="M13.6 14.5l1.7-1.6a1.5 1.5 0 0 1 2 0l3.2 3"/></svg>',
     search:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m20 20-4.8-4.8"/></svg>',
+    mic:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><path d="M12 18v3M9 21h6"/></svg>',
   };
   function icon(name){ return ICONS[name] || ''; }
 
@@ -975,6 +998,7 @@ svg.leaflet-zoom-animated{will-change:transform}
         ],
         photos:{ batiment:'', chaufferie:'', temperature:'' },
         photosExtra:[],
+        synoptique:{ nbBatiments:'4', nbChauffage:'2', nbVannes:'4' },
         notes:'Réseau CPCU, calorifugeage des colonnes montantes et du sous-sol réalisé sur 3 jours.',
         createdAt: Date.now() - 1000*60*60*24*20,
       },
@@ -992,6 +1016,7 @@ svg.leaflet-zoom-animated{will-change:transform}
         pointsTemp:[], logsAvant:[], logsApres:[],
         photos:{ batiment:'', chaufferie:'', temperature:'' },
         photosExtra:[],
+        synoptique:{ nbBatiments:'', nbChauffage:'', nbVannes:'' },
         notes:'',
         createdAt: Date.now() - 1000*60*60*24*2,
       },
@@ -1030,6 +1055,7 @@ svg.leaflet-zoom-animated{will-change:transform}
       logsAvant:[], logsApres:[],
       photos:{ batiment:'', chaufferie:'', temperature:'' },
       photosExtra:[],
+      synoptique:{ nbBatiments:'', nbChauffage:'', nbVannes:'' },
       notes:'',
       createdAt: Date.now(),
     };
@@ -1142,6 +1168,9 @@ svg.leaflet-zoom-animated{will-change:transform}
     if (!Array.isArray(d.logsAvant)) d.logsAvant = [];
     if (!Array.isArray(d.logsApres)) d.logsApres = [];
     if (!Array.isArray(d.photosExtra)) d.photosExtra = [];
+    if (!d.synoptique || typeof d.synoptique !== 'object'){
+      d.synoptique = { nbBatiments:'', nbChauffage:'', nbVannes:'' };
+    }
     d.logsAvant.forEach(r => { if (!Array.isArray(r.amb)) r.amb = [null,null,null,null,null]; });
     d.logsApres.forEach(r => { if (!Array.isArray(r.amb)) r.amb = [null,null,null,null,null]; });
     return d;
@@ -1554,7 +1583,35 @@ svg.leaflet-zoom-animated{will-change:transform}
 
         <div class="panel">
           <span class="tick-bl"></span><span class="tick-br"></span>
-          <div class="section-head"><div class="section-num">12</div><div class="section-title">Notes</div></div>
+          <div class="section-head"><div class="section-num">12</div><div class="section-title">Schéma synoptique hydraulique</div></div>
+          <div class="section-desc">Indiquez le nombre de bâtiments, de chaudières et de vannes d'équilibrage — à l'écrit ou à l'oral (icône micro) — pour générer automatiquement un schéma de principe.</div>
+          <div class="synop-fields" style="margin-top:16px;">
+            <div class="field"><label>Nombre de bâtiments</label>
+              <div class="synop-field-row">
+                <input class="mono-input" type="number" min="1" max="8" id="synop-batiments" name="synoptique.nbBatiments" value="${esc(d.synoptique.nbBatiments)}" placeholder="4"/>
+                <button type="button" class="mic-btn" data-mic="nbBatiments" title="Dicter ce nombre">${icon('mic')}</button>
+              </div>
+            </div>
+            <div class="field"><label>Nombre de chaudières</label>
+              <div class="synop-field-row">
+                <input class="mono-input" type="number" min="1" max="4" id="synop-chauffage" name="synoptique.nbChauffage" value="${esc(d.synoptique.nbChauffage)}" placeholder="1"/>
+                <button type="button" class="mic-btn" data-mic="nbChauffage" title="Dicter ce nombre">${icon('mic')}</button>
+              </div>
+            </div>
+            <div class="field"><label>Nombre de vannes</label>
+              <div class="synop-field-row">
+                <input class="mono-input" type="number" min="1" max="12" id="synop-vannes" name="synoptique.nbVannes" value="${esc(d.synoptique.nbVannes)}" placeholder="4"/>
+                <button type="button" class="mic-btn" data-mic="nbVannes" title="Dicter ce nombre">${icon('mic')}</button>
+              </div>
+            </div>
+          </div>
+          <div class="synop-hint" id="synop-mic-hint"></div>
+          <div class="synop-preview" id="synop-preview"></div>
+        </div>
+
+        <div class="panel">
+          <span class="tick-bl"></span><span class="tick-br"></span>
+          <div class="section-head"><div class="section-num">13</div><div class="section-title">Notes</div></div>
           <div class="field" style="margin-top:14px;">
             <textarea name="notes" placeholder="Observations, réseau de chauffage, travaux réalisés…">${esc(d.notes)}</textarea>
           </div>
@@ -1575,6 +1632,8 @@ svg.leaflet-zoom-animated{will-change:transform}
     renderGeoPreview();
     attachAddressAutocomplete();
     attachGeocodeButton();
+    renderSynopticPreview();
+    attachSynopticControls();
 
     document.getElementById('btn-back').addEventListener('click', () => go(isEdit ? 'report' : 'dashboard', isEdit ? S.dossierId : null));
     document.getElementById('btn-cancel').addEventListener('click', () => go(isEdit ? 'report' : 'dashboard', isEdit ? S.dossierId : null));
@@ -1926,6 +1985,10 @@ svg.leaflet-zoom-animated{will-change:transform}
     d.typeLogement.surfaceM2 = get('typeLogement.surfaceM2').value.trim();
     d.typeLogement.nbSousStations = get('typeLogement.nbSousStations').value.trim();
     d.typeLogement.tempExterieure = get('typeLogement.tempExterieure').value.trim();
+    ['nbBatiments','nbChauffage','nbVannes'].forEach(k => {
+      const el = get('synoptique.' + k);
+      if (el) d.synoptique[k] = el.value.trim();
+    });
     d.notes = get('notes').value;
     if (!d.numero) d.numero = generateNumeroDossier();
   }
@@ -2047,6 +2110,226 @@ svg.leaflet-zoom-animated{will-change:transform}
     });
   }
 
+
+  /* ---- Schéma synoptique hydraulique — généré à partir de 3 paramètres
+     (bâtiments, chaudières, vannes). Style schématique volontairement
+     simplifié : l'objectif est une allure de principe reconnaissable, pas
+     un plan hydraulique exact. ---- */
+  function synopticSvg(nbBatIn, nbChaufIn, nbVannesIn){
+    const nbBat = Math.max(1, Math.min(8, Math.round(nbBatIn) || 1));
+    const nbChauf = Math.max(1, Math.min(4, Math.round(nbChaufIn) || 1));
+    const nbVannes = Math.max(1, Math.min(12, Math.round(nbVannesIn) || 1));
+
+    const RED = '#c23b3b', BLUE = '#2a5fb0', INK = '#20272a';
+    const colW = 128;
+    const headerStartX = 232;
+    const redY = 300, blueY = 366;
+    const pumpBoxY = 40, pumpBoxH = 34;
+    const avantValveY = 168, retourValveY = 232;
+    const width = headerStartX + nbVannes * colW + 46;
+    let height = 410;
+
+    // Répartit les colonnes de vannes entre les bâtiments (le plus
+    // régulièrement possible).
+    const groups = Math.min(nbBat, nbVannes);
+    const base = Math.floor(nbVannes / groups), extra = nbVannes % groups;
+    const groupSizes = [];
+    for (let g = 0; g < groups; g++) groupSizes.push(base + (g < extra ? 1 : 0));
+
+    function pumpIcon(cx, cy, r){
+      return `<circle cx="${cx}" cy="${cy}" r="${r}" fill="#fff" stroke="${INK}" stroke-width="1.4"/>
+        <path d="M${cx-r*0.42},${cy-r*0.5} L${cx+r*0.5},${cy} L${cx-r*0.42},${cy+r*0.5} Z" fill="${INK}"/>`;
+    }
+    function valveIcon(cx, cy, color, stem){
+      let s = `<path d="M${cx-9},${cy-6} L${cx},${cy} L${cx-9},${cy+6} Z M${cx+9},${cy-6} L${cx},${cy} L${cx+9},${cy+6} Z" fill="none" stroke="${color}" stroke-width="1.6" stroke-linejoin="round"/>`;
+      if (stem){
+        s += `<line x1="${cx}" y1="${cy-6}" x2="${cx}" y2="${cy-13}" stroke="${color}" stroke-width="1.6"/>
+          <line x1="${cx-5}" y1="${cy-13}" x2="${cx+5}" y2="${cy-13}" stroke="${color}" stroke-width="1.6"/>`;
+      }
+      return s;
+    }
+    function taUnderline(cx, cy, color){
+      return `<line x1="${cx-7}" y1="${cy+12}" x2="${cx+7}" y2="${cy+12}" stroke="${color}" stroke-width="1.3"/>
+        <line x1="${cx-7}" y1="${cy+15.5}" x2="${cx+7}" y2="${cy+15.5}" stroke="${color}" stroke-width="1.3"/>`;
+    }
+
+    // Chaufferie : chaudière(s) empilée(s) à gauche. Ancrée près du
+    // collecteur départ ; la hauteur totale du schéma s'ajuste ensuite
+    // pour ne jamais rogner la pile (jusqu'à 4 chaudières).
+    const boilerW = 92, boilerGap = 8, boilerH = 54;
+    const boilersTotalH = nbChauf*boilerH + (nbChauf-1)*boilerGap;
+    const boilerX = 16;
+    const boilerY0 = redY - 16;
+    let boilerHtml = '';
+    for (let b=0; b<nbChauf; b++){
+      const by = boilerY0 + b*(boilerH+boilerGap);
+      boilerHtml += `
+        <rect x="${boilerX}" y="${by}" width="${boilerW}" height="${boilerH}" fill="#fff" stroke="${INK}" stroke-width="4"/>
+        <rect x="${boilerX+9}" y="${by+5}" width="${boilerW-18}" height="${boilerH/2-8}" fill="none" stroke="${INK}" stroke-width="1.2"/>
+        <rect x="${boilerX+9}" y="${by+boilerH/2+3}" width="${boilerW-18}" height="${boilerH/2-8}" fill="none" stroke="${INK}" stroke-width="1.2"/>
+      `;
+    }
+    const boilerMidY = boilerY0 + boilersTotalH/2;
+    height = Math.max(height, boilerY0 + boilersTotalH + 24);
+
+    // Purgeur au-dessus de la chaufferie.
+    const ventX = boilerX + 24, ventTopY = Math.max(4, boilerY0 - 30);
+    const ventHtml = `
+      <line x1="${ventX}" y1="${boilerY0}" x2="${ventX}" y2="${ventTopY+14}" stroke="${INK}" stroke-width="1.2"/>
+      ${valveIcon(ventX, ventTopY+16, INK, false)}
+      <rect x="${ventX-5}" y="${ventTopY}" width="10" height="8" fill="none" stroke="${INK}" stroke-width="1.1"/>
+    `;
+
+    // Pompe de circulation + filtre, sur le retour, entre chaufferie et collecteurs.
+    const pumpX = boilerX + boilerW + 46, pumpY = blueY;
+    const pumpHtml = `
+      ${pumpIcon(pumpX, pumpY, 14)}
+      <rect x="${pumpX+16}" y="${pumpY-8}" width="15" height="16" fill="#fff" stroke="${INK}" stroke-width="1.3"/>
+    `;
+
+    // Raccordements chaufferie <-> collecteurs (départ rouge / retour bleu).
+    const connHtml = `
+      <line x1="${boilerX+boilerW}" y1="${boilerMidY}" x2="${headerStartX}" y2="${boilerMidY}" stroke="${RED}" stroke-width="2.4"/>
+      <line x1="${headerStartX}" y1="${boilerMidY}" x2="${headerStartX}" y2="${redY}" stroke="${RED}" stroke-width="2.4"/>
+      <line x1="${pumpX+31}" y1="${pumpY}" x2="${headerStartX}" y2="${pumpY}" stroke="${BLUE}" stroke-width="2.4"/>
+      <line x1="${headerStartX}" y1="${pumpY}" x2="${headerStartX}" y2="${blueY}" stroke="${BLUE}" stroke-width="2.4"/>
+      <line x1="${boilerX}" y1="${pumpY}" x2="${pumpX-14}" y2="${pumpY}" stroke="${BLUE}" stroke-width="2.4"/>
+    `;
+
+    // Collecteurs horizontaux (départ / retour).
+    const headerEndX = headerStartX + (nbVannes-1)*colW + colW/2 + 10;
+    const headerHtml = `
+      <line x1="${headerStartX}" y1="${redY}" x2="${headerEndX}" y2="${redY}" stroke="${RED}" stroke-width="2.4"/>
+      <line x1="${headerStartX}" y1="${blueY}" x2="${headerEndX}" y2="${blueY}" stroke="${BLUE}" stroke-width="2.4"/>
+    `;
+
+    // Colonnes (une par vanne), regroupées visuellement par bâtiment.
+    let colsHtml = '';
+    let groupLabelsHtml = '';
+    let colIndex = 0;
+    groupSizes.forEach((size, gi) => {
+      if (!size) return;
+      const groupStartX = headerStartX + colIndex*colW;
+      for (let k=0; k<size; k++, colIndex++){
+        const cx = headerStartX + colIndex*colW + colW/2;
+        const cxRed = cx - 11, cxBlue = cx + 11;
+        const taNum = colIndex + 1;
+        colsHtml += `
+          <line x1="${cxRed}" y1="${redY}" x2="${cxRed}" y2="${pumpBoxY+pumpBoxH}" stroke="${RED}" stroke-width="2.2"/>
+          <line x1="${cxBlue}" y1="${blueY}" x2="${cxBlue}" y2="${pumpBoxY+pumpBoxH}" stroke="${BLUE}" stroke-width="2.2"/>
+          <rect x="${cx-30}" y="${pumpBoxY}" width="60" height="${pumpBoxH}" rx="4" fill="#fff" stroke="${INK}" stroke-width="1.4"/>
+          ${pumpIcon(cx-14, pumpBoxY+pumpBoxH/2, 9)}
+          ${pumpIcon(cx+14, pumpBoxY+pumpBoxH/2, 9)}
+          <path d="M${cxRed},${pumpBoxY+pumpBoxH+2} l-4,7 h8 z" fill="${RED}"/>
+          <path d="M${cxBlue},${pumpBoxY+pumpBoxH+2} l-4,7 h8 z" fill="${BLUE}"/>
+          ${valveIcon(cxRed, avantValveY, RED, true)}
+          ${valveIcon(cxBlue, retourValveY, BLUE, false)}
+          ${taUnderline(cxBlue, retourValveY, BLUE)}
+          <text x="${cxBlue+13}" y="${retourValveY+4}" font-size="12" font-family="var(--font-mono, monospace)" fill="${INK}">TA ${taNum}</text>
+        `;
+      }
+      const groupEndX = headerStartX + colIndex*colW;
+      const groupMidX = (groupStartX + groupEndX) / 2;
+      groupLabelsHtml += `
+        <text x="${groupMidX}" y="16" font-size="12.5" font-weight="700" text-anchor="middle" fill="${INK}">Bâtiment ${gi+1}</text>
+        <line x1="${groupStartX+10}" y1="24" x2="${groupEndX-10}" y2="24" stroke="${INK}" stroke-width="1" opacity="0.35"/>
+      `;
+    });
+
+    return `<svg viewBox="0 0 ${width} ${height}" width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg" font-family="Inter, system-ui, sans-serif">
+      ${groupLabelsHtml}
+      ${connHtml}
+      ${headerHtml}
+      ${colsHtml}
+      ${boilerHtml}
+      ${ventHtml}
+      ${pumpHtml}
+    </svg>`;
+  }
+
+  function renderSynopticPreview(){
+    const el = document.getElementById('synop-preview');
+    if (!el) return;
+    const s = S.draft.synoptique || {};
+    const nbBat = parseInt(s.nbBatiments, 10);
+    const nbChauf = parseInt(s.nbChauffage, 10);
+    const nbVannes = parseInt(s.nbVannes, 10);
+    if (!nbBat && !nbChauf && !nbVannes){
+      el.innerHTML = `<div class="geo-caption" style="text-align:center; padding:20px 0;">Renseignez les 3 champs ci-dessus pour générer le schéma.</div>`;
+      return;
+    }
+    el.innerHTML = synopticSvg(nbBat || 1, nbChauf || 1, nbVannes || 1);
+  }
+
+  // Reconnaissance vocale (Web Speech API) : dicte un nombre dans un champ.
+  // Indisponible dans certains contextes (notamment l'aperçu Artifact en
+  // bac à sable) — on se dégrade alors proprement vers un message explicite
+  // plutôt que de faire planter le bouton.
+  const FR_NUMBER_WORDS = {
+    zéro:0, zero:0, un:1, une:1, deux:2, trois:3, quatre:4, cinq:5, six:6,
+    sept:7, huit:8, neuf:9, dix:10, onze:11, douze:12,
+  };
+  function parseSpokenNumber(text){
+    const digits = String(text||'').match(/\d+/);
+    if (digits) return parseInt(digits[0], 10);
+    const word = String(text||'').toLowerCase().trim().split(/\s+/)[0];
+    if (word in FR_NUMBER_WORDS) return FR_NUMBER_WORDS[word];
+    return null;
+  }
+  function attachSynopticControls(){
+    const main = document.getElementById('main');
+    const d = S.draft;
+    ['nbBatiments','nbChauffage','nbVannes'].forEach(key => {
+      const input = main.querySelector(`[name="synoptique.${key}"]`);
+      if (!input) return;
+      input.addEventListener('input', () => {
+        d.synoptique[key] = input.value;
+        renderSynopticPreview();
+      });
+    });
+
+    const hint = document.getElementById('synop-mic-hint');
+    const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+    main.querySelectorAll('.mic-btn[data-mic]').forEach(btn => {
+      if (!SpeechRec){
+        btn.addEventListener('click', () => {
+          if (hint) hint.textContent = "Dictée vocale indisponible ici — fonctionne une fois le site auto-hébergé, dans un navigateur compatible (Chrome).";
+        });
+        return;
+      }
+      btn.addEventListener('click', () => {
+        const key = btn.dataset.mic;
+        const input = main.querySelector(`[name="synoptique.${key}"]`);
+        if (!input) return;
+        let rec;
+        try{ rec = new SpeechRec(); }
+        catch(e){ if (hint) hint.textContent = 'Dictée vocale indisponible ici.'; return; }
+        rec.lang = 'fr-FR';
+        rec.interimResults = false;
+        rec.maxAlternatives = 3;
+        btn.classList.add('listening');
+        if (hint) hint.textContent = 'Écoute… dites un nombre (ex. « quatre »).';
+        rec.onresult = (e) => {
+          const transcript = e.results && e.results[0] && e.results[0][0] ? e.results[0][0].transcript : '';
+          const n = parseSpokenNumber(transcript);
+          if (n != null){
+            input.value = n;
+            d.synoptique[key] = String(n);
+            renderSynopticPreview();
+            if (hint) hint.textContent = `Compris : « ${transcript} » → ${n}.`;
+          } else if (hint){
+            hint.textContent = `Je n'ai pas compris de nombre dans « ${transcript} ». Réessayez ou tapez la valeur.`;
+          }
+        };
+        rec.onerror = () => {
+          if (hint) hint.textContent = "Dictée vocale indisponible (micro refusé, ou service injoignable ici — fonctionne une fois le site auto-hébergé).";
+        };
+        rec.onend = () => { btn.classList.remove('listening'); };
+        try{ rec.start(); }
+        catch(e){ btn.classList.remove('listening'); if (hint) hint.textContent = 'Dictée vocale indisponible ici.'; }
+      });
+    });
+  }
 
   function cadastreSvg(seedStr){
     const h = seedHash(seedStr || 'x');
