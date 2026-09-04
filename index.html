@@ -2884,6 +2884,291 @@ svg.leaflet-zoom-animated{will-change:transform}
     ]);
   }
 
+  /* ---- Pages "écrites en dur" : méthodologie / généralités / annexes ----
+     Contenu générique repris tel quel des modèles de rapport papier (identique
+     sur 4 dossiers réels comparés) : uniquement le nom et l'adresse du site
+     sont interpolés. Le reste (méthodes de rééquilibrage, considérations,
+     équipement d'essai, méthodologie appliquée) est un texte fixe. */
+  function pdfSafeText(str){
+    return String(str==null ? '' : str)
+      .replace(/Δ([A-Za-zµ])/g, 'Delta $1')
+      .replace(/Δ/g, 'Delta')
+      .replace(/≤/g, '<=')
+      .replace(/≥/g, '>=')
+      .replace(/[‘’]/g, "'")
+      .replace(/[“”]/g, '"');
+  }
+
+  function pdfEnsureSpace(doc, y, needed, headerTitle){
+    const pageH = doc.internal.pageSize.getHeight();
+    if (y + needed > pageH - 20){
+      doc.addPage('a4','portrait');
+      return pdfBrandHeader(doc, headerTitle);
+    }
+    return y;
+  }
+
+  function pdfWordsFromRuns(runs){
+    const words = [];
+    runs.forEach(r => {
+      const txt = pdfSafeText(r.text);
+      txt.split(/(\s+)/).filter(t => t !== '').forEach(t => {
+        words.push({ text:t, bold: !!r.bold, isSpace: /^\s+$/.test(t) });
+      });
+    });
+    return words;
+  }
+
+  function pdfDrawRuns(doc, x, y, maxW, runs, opts){
+    opts = opts || {};
+    const size = opts.size || 8.5, lineH = opts.lineH || 4.3, color = opts.color || PDF_C.ink;
+    doc.setFontSize(size);
+    const words = pdfWordsFromRuns(runs);
+    let cx = x, lineStart = true;
+    words.forEach(w => {
+      doc.setFont('helvetica', w.bold ? 'bold' : 'normal');
+      if (w.isSpace){
+        if (!lineStart) cx += doc.getTextWidth(w.text);
+        return;
+      }
+      const tw = doc.getTextWidth(w.text);
+      if (!lineStart && (cx - x + tw) > maxW){
+        y += lineH; cx = x; lineStart = true;
+      }
+      doc.setTextColor(...color);
+      doc.text(w.text, cx, y);
+      cx += tw;
+      lineStart = false;
+    });
+    return y + lineH;
+  }
+
+  function pdfMethodologyBlocks(d){
+    const h1 = (num,text) => ({ t:'h1', num, text });
+    const h2 = (text) => ({ t:'h2', text });
+    const p = (text, opts) => ({ t:'p', text, ...(opts||{}) });
+    const bullet = (lead, body) => ({ t:'bullet', lead, body });
+    const bullet2 = (lead, body) => ({ t:'bullet2', lead, body });
+    const runp = (lead, body, indent) => ({ t:'runp', lead, body, indent });
+    const step = (num, text) => ({ t:'step', num, text });
+    const space = (h) => ({ t:'space', h });
+    const siteinfo = (text) => ({ t:'siteinfo', text });
+
+    const siteName = d.residence || d.client.nom || 'le site';
+    const siteAddr = [d.adresse.rue, [d.adresse.cp, d.adresse.ville].filter(Boolean).join(' ')].filter(Boolean).join(' ');
+
+    return [
+      h1(1, 'GÉNÉRALITÉS :'),
+      h2('PRÉSENTATION'),
+      p("Dans le cadre de la rénovation énergétique « CALORIF SUIVI » a procédé à la vérification et à l'équilibrage hydraulique des installations de chauffage, des bâtiments situés au :", { indent:4 }),
+      space(2),
+      siteinfo(siteName + (siteAddr ? ' : ' + siteAddr : '')),
+      space(3),
+
+      h1(2, 'DÉROULEMENT DE LA MISSION :'),
+      h2('RELEVÉS SUR SITE'),
+      p('Méthodes de rééquilibrage', { bold:true, indent:4, size:8.8, gap:1 }),
+      p("Une fois les déséquilibres identifiés et les objectifs fixés, diverses méthodes peuvent être appliquées pour rééquilibrer le réseau de chauffage :", { indent:4 }),
+      bullet("Ajustement des vannes d'équilibrage", "Chaque radiateur est équipé de vannes thermostatiques ou manuelles permettant de contrôler le débit d'eau chaude. En ajustant ces vannes, il est possible de répartir correctement la chaleur en fonction des besoins spécifiques de chaque radiateur."),
+      bullet2("Vannes thermostatiques", "Ces vannes ajustent automatiquement le débit d'eau en fonction de la température de la pièce, mais elles peuvent aussi être réglées manuellement pour affiner le rééquilibrage."),
+      bullet2("Vannes d'équilibrage", "Dans certains systèmes, des vannes d'équilibrage sont installées pour ajuster précisément le débit d'eau dans chaque segment du réseau de tuyauterie."),
+      bullet("Modification des débits d'eau", "L'une des techniques les plus courantes consiste à ajuster les débits d'eau chaude qui circulent à travers les radiateurs. Pour les réseaux à circulation forcée, cela peut nécessiter l'utilisation de pompes de circulation pour contrôler la vitesse de l'eau et, ainsi, réguler la chaleur dans chaque radiateur."),
+      bullet("Contrôle de la température de l'eau", "Un rééquilibrage peut également inclure l'ajustement de la température de l'eau envoyée par la chaudière. Si la température de l'eau est trop élevée, cela peut entraîner une surcharge de chaleur dans certaines zones, tandis qu'une température trop basse peut conduire à un chauffage insuffisant dans d'autres zones."),
+      bullet("Répartition du débit en fonction des besoins", "Si certains radiateurs sont plus éloignés de la chaudière, l'ajustement de la pression dans les tuyauteries peut être nécessaire pour garantir un débit suffisant dans les zones distantes."),
+      space(3),
+
+      h2('ÉTUDES'),
+      p("Ajustement des débits d'eau (ou de chaleur)", { bold:true, indent:4, size:8.8, gap:1 }),
+      p("Une fois les objectifs fixés, l'étape suivante consiste à ajuster les débits d'eau chaude ou de chaleur dans le réseau pour équilibrer la distribution. Cela peut inclure plusieurs actions :", { indent:4 }),
+      bullet("Réglage des vannes thermostatiques", "Chaque radiateur peut être équipé d'une vanne thermostatique, permettant de réguler le débit d'eau chaude en fonction de la température ambiante. L'ajustement de ces vannes garantit une température constante et uniforme."),
+      bullet("Utilisation de vannes d'équilibrage", "Ces vannes permettent de contrôler précisément le débit d'eau dans chaque segment de tuyauterie ou dans chaque radiateur pour éviter que certaines zones reçoivent plus d'eau chaude que d'autres."),
+      bullet("Pompes de circulation", "Si le système utilise des pompes, ces dernières peuvent être ajustées pour modifier la vitesse de circulation de l'eau dans les tuyaux et garantir une pression homogène à travers tout le réseau."),
+      bullet("Réglage des températures de départ et de retour", "Ajuster la température de l'eau qui sort de la chaudière et celle qui revient après avoir circulé dans les radiateurs. Cela garantit que chaque radiateur reçoive de l'eau à la température optimale."),
+      space(2),
+      p('Équilibrage hydraulique du réseau', { bold:true, indent:4, size:8.8, gap:1 }),
+      p("L'équilibrage hydraulique est une étape cruciale dans la procédure, surtout dans un réseau complexe de chauffage à eau chaude :", { indent:4 }),
+      bullet("Calcul des débits et pressions", "En fonction de la configuration du réseau, des calculs sont effectués pour déterminer les débits et les pressions optimaux à chaque point du réseau. Ces calculs tiennent compte des distances, des pertes de charge dans les tuyaux et de la capacité des radiateurs."),
+      bullet("Réglage des vannes d'équilibrage", "En ajustant les vannes d'équilibrage, on s'assure que le débit d'eau dans chaque branche du réseau est correct, en évitant les zones sous-alimentées en chaleur ou trop chauffées."),
+      bullet("Test de répartition", "Après avoir ajusté les vannes, des tests sont effectués pour vérifier que l'eau circule correctement dans toutes les sections du réseau et que chaque radiateur reçoit la quantité de chaleur requise."),
+      space(3),
+
+      h2('CONSIDÉRATIONS'),
+      p("Les spécifications attendues pour garantir un bon équilibrage du réseau, en particulier dans un réseau de chauffage, de ventilation ou de climatisation, se concentrent principalement sur deux critères importants :", { indent:4 }),
+      step(1, 'Delta de température (ΔT) :'),
+      bullet2(null, "Le delta de température représente la différence entre la température de l'eau ou de l'air à l'entrée et à la sortie des équipements de chauffage ou de refroidissement (comme les radiateurs, les ventilo-convecteurs, etc.)."),
+      bullet2('Spécifications attendues', "Un ΔT optimal garantit un rendement énergétique maximum et une efficacité optimale du système. Un écart de température trop faible indique que le fluide ne passe pas assez de temps à chauffer ou refroidir l'air ou l'eau, tandis qu'un écart trop élevé pourrait signifier un flux insuffisant de fluide, ce qui réduit aussi l'efficacité."),
+      bullet2(null, "Par exemple, dans un système de chauffage à eau, un ΔT typique peut être de 10°C à 15°C entre l'entrée et la sortie, bien que cela varie en fonction de la conception du réseau."),
+      step(2, 'Écart entre le débit théorique et le débit mesuré :'),
+      bullet2(null, "Le débit théorique est basé sur les calculs effectués lors de la conception du système (en fonction de la puissance nécessaire pour chauffer ou refroidir un espace, la taille des tuyaux, etc.). Le débit mesuré est celui effectivement observé sur le terrain avec des appareils de mesure comme les débitmètres."),
+      bullet2('Spécifications attendues', "L'écart entre ces deux débits doit être minimal pour garantir que le système fonctionne de manière optimale. Un écart trop important peut indiquer des problèmes comme des pertes de charge excessives, des restrictions dans les conduits, ou des erreurs dans les réglages des vannes ou des pompes."),
+      bullet2(null, "En pratique, un écart acceptable se situe généralement autour de 5 à 10 % du débit théorique, mais cela peut varier en fonction de la précision des instruments et des exigences spécifiques du réseau."),
+      space(1.5),
+      p('Autres considérations :', { bold:true, indent:4, size:8.8, gap:1 }),
+      bullet('Réglage des vannes et des pompes', "Les vannes d'équilibrage et les pompes de circulation doivent être ajustées pour garantir un débit homogène dans tout le réseau. Des écarts de débit peuvent signaler des vannes mal réglées ou des problèmes de circulation."),
+      bullet('Maintenance et entretien', "Le système doit être régulièrement entretenu pour s'assurer que les débits sont respectés et que les écarts entre le débit théorique et mesuré restent dans les limites acceptables."),
+      space(1),
+      p("En résumé, pour un bon équilibrage du réseau, il est essentiel de maintenir un delta de température optimal et de minimiser l'écart entre les débits théoriques et mesurés, tout en s'assurant que l'ensemble du réseau est bien réglé et entretenu.", { indent:0 }),
+      space(3),
+
+      h1(3, "ÉQUIPEMENT D'ESSAI :"),
+      h2('INSTRUMENT DE MESURE'),
+      p('TA Scope et thermomètre infrarouge. Équilibrage réalisé par un technicien chauffagiste NP4.', { indent:4 }),
+      space(2),
+      { t:'equiptable' },
+      space(4),
+
+      h1(4, 'MÉTHODE DE MESURE :'),
+      h2('MÉTHODOLOGIE APPLIQUÉE'),
+      step(1, 'Préparation et étude préalable'),
+      p('Avant toute intervention, il est crucial de préparer le travail :', { indent:4 }),
+      runp('Analyse des plans et documents de conception', "Identifier les débits théoriques, pertes de charges prévues, et les points critiques du réseau (vannes d'équilibrage, pompes, etc.).", 4),
+      runp('Vérification des équipements installés', "S'assurer que les vannes, pompes et capteurs correspondent aux spécifications initiales.", 4),
+      runp('Inspection visuelle du réseau', "Identifier les problèmes évidents comme des boucles fermées, des vannes mal réglées ou des obstructions potentielles.", 4),
+      space(2),
+      step(2, 'Mise en service des instruments de mesure'),
+      runp('Installation des outils', "Connecter les appareils de mesure (ex. : TA Scope ou autres débitmètres et manomètres) sur les points d'accès des vannes d'équilibrage.", 4),
+      runp('Vérification des capteurs', "S'assurer que les capteurs de pression et de température sont bien calibrés et fonctionnels.", 4),
+      runp('Validation des conditions initiales', "Mettre en marche le réseau et laisser le système atteindre son régime établi (températures et débits stabilisés).", 4),
+      space(2),
+      step(3, 'Mesures initiales'),
+      runp('Relevé des débits réels', "Mesurer les débits sur chaque branche et boucle principale pour comparer avec les valeurs théoriques.", 4),
+      runp('Mesure des pressions', "Identifier les écarts de pression entre l'entrée et la sortie de chaque vanne et section critique du réseau.", 4),
+      runp('Vérification des températures', "Relever les températures d'entrée et de sortie des équipements pour calculer le ΔT.", 4),
+      space(2),
+      step(4, 'Ajustement et équilibrage'),
+      p("L'objectif est de rapprocher les mesures des valeurs théoriques pour un fonctionnement optimal.", { indent:4 }),
+      bullet("Réglage des vannes d'équilibrage", ''),
+      bullet2(null, 'Ajuster les vannes progressivement en fonction des débits mesurés.'),
+      bullet2(null, 'Prioriser les circuits les plus éloignés (souvent sous-desservis) avant de régler les circuits plus proches.'),
+      bullet('Ajustement des pompes', ''),
+      bullet2(null, 'Ajuster la vitesse des pompes pour garantir que la pression et le débit global sont corrects.'),
+      bullet2(null, 'Vérifier que la pompe fonctionne dans sa plage de rendement optimal.'),
+      space(2),
+      step(5, 'Validation des performances'),
+      p('Une fois les ajustements effectués :', { indent:4 }),
+      bullet('Nouvelle série de mesures', 'Relever les débits, pressions, et ΔT sur tous les circuits et les comparer aux valeurs théoriques.'),
+      bullet('Vérification des tolérances', ''),
+      bullet2(null, 'ΔT conforme aux spécifications (ex. : 10-15 °C en chauffage).'),
+      bullet2(null, 'Débits réels proches des débits théoriques (écart généralement ≤ 5 à 10 %).'),
+      bullet2(null, 'Pertes de charge cohérentes sur les différentes branches.'),
+      bullet('Analyse des déséquilibres résiduels', 'Si des écarts subsistent, vérifier les causes potentielles (bouchons, erreurs de conception, équipements sous-dimensionnés, etc.).'),
+      space(2),
+      step(6, 'Documentation et justification'),
+      p('Pour garantir la traçabilité du bon équilibrage :', { indent:4 }),
+      bullet('Rapport final des mesures', 'Inclure les mesures initiales, les ajustements effectués, et les mesures finales.'),
+      bullet('Comparaison avec les valeurs théoriques', 'Justifier que les écarts sont dans les tolérances admissibles.'),
+    ];
+  }
+
+  function pdfRenderMethodology(doc, d, marginX, contentW){
+    const headerTitle = "Généralités et méthodologie d'équilibrage";
+    let y = pdfBrandHeader(doc, headerTitle);
+    const blocks = pdfMethodologyBlocks(d);
+    blocks.forEach(b => {
+      if (b.t === 'h1'){
+        const label = b.num + '. ' + pdfSafeText(b.text);
+        doc.setFont('helvetica','bold'); doc.setFontSize(11.5);
+        const estLines = doc.splitTextToSize(label, contentW).length;
+        y = pdfEnsureSpace(doc, y, estLines*6+6, headerTitle);
+        doc.setFont('helvetica','bold'); doc.setFontSize(11.5); doc.setTextColor(...PDF_C.cold);
+        doc.text(label, marginX, y+2);
+        doc.setDrawColor(...PDF_C.cold); doc.setLineWidth(0.35);
+        doc.line(marginX, y+3.6, marginX + doc.getTextWidth(label), y+3.6);
+        y += 9;
+      } else if (b.t === 'h2'){
+        y = pdfEnsureSpace(doc, y, 8, headerTitle);
+        doc.setFont('helvetica','bold'); doc.setFontSize(9.3); doc.setTextColor(...PDF_C.ink);
+        doc.text('» ' + pdfSafeText(b.text), marginX+4, y+2);
+        y += 7.5;
+      } else if (b.t === 'p'){
+        doc.setFont('helvetica', b.bold ? 'bold' : 'normal'); doc.setFontSize(b.size||8.7);
+        const indent = b.indent||0;
+        const lines = doc.splitTextToSize(pdfSafeText(b.text), contentW-indent);
+        y = pdfEnsureSpace(doc, y, lines.length*4.3+2, headerTitle);
+        doc.setFont('helvetica', b.bold ? 'bold' : 'normal'); doc.setFontSize(b.size||8.7); doc.setTextColor(...(b.color||PDF_C.inkSoft));
+        lines.forEach(line => { doc.text(line, marginX+indent, y); y += 4.3; });
+        y += (b.gap!=null ? b.gap : 2);
+      } else if (b.t === 'bullet' || b.t === 'bullet2'){
+        const isSub = b.t === 'bullet2';
+        const markerX = marginX + (isSub ? 13 : 6);
+        const textX = marginX + (isSub ? 18 : 11);
+        const textW = contentW - (textX - marginX);
+        const flat = (b.lead ? b.lead + (b.body ? ' : ' : '') : '') + (b.body||'');
+        doc.setFont('helvetica','normal'); doc.setFontSize(8.5);
+        const estLines = doc.splitTextToSize(pdfSafeText(flat), textW).length;
+        y = pdfEnsureSpace(doc, y, estLines*4.3+3, headerTitle);
+        doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(...PDF_C.ink);
+        doc.text(isSub ? '-' : '•', markerX, y);
+        const runs = b.lead
+          ? (b.body ? [{text:b.lead+' : ', bold:true}, {text:b.body, bold:false}] : [{text:b.lead, bold:true}])
+          : [{text:b.body||'', bold:false}];
+        y = pdfDrawRuns(doc, textX, y, textW, runs, { size:8.5, lineH:4.3, color:PDF_C.ink });
+        y += 1.5;
+      } else if (b.t === 'runp'){
+        const textX = marginX + (b.indent||0);
+        const textW = contentW - (b.indent||0);
+        const flat = (b.lead ? b.lead+' : ' : '') + (b.body||'');
+        doc.setFont('helvetica','normal'); doc.setFontSize(8.5);
+        const estLines = doc.splitTextToSize(pdfSafeText(flat), textW).length;
+        y = pdfEnsureSpace(doc, y, estLines*4.3+2, headerTitle);
+        const runs = b.lead ? [{text:b.lead+' : ', bold:true}, {text:b.body, bold:false}] : [{text:b.body||'', bold:false}];
+        y = pdfDrawRuns(doc, textX, y, textW, runs, { size:8.5, lineH:4.3, color:PDF_C.ink });
+        y += 1.8;
+      } else if (b.t === 'step'){
+        y = pdfEnsureSpace(doc, y, 8, headerTitle);
+        doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(...PDF_C.accent);
+        doc.text(pdfSafeText(b.num + '. ' + b.text), marginX, y+2);
+        y += 7;
+      } else if (b.t === 'space'){
+        y += (b.h||4);
+      } else if (b.t === 'siteinfo'){
+        y = pdfEnsureSpace(doc, y, 8, headerTitle);
+        doc.setFont('helvetica','bold'); doc.setFontSize(9.5); doc.setTextColor(...PDF_C.ink);
+        doc.text(pdfSafeText(b.text), marginX, y+2);
+        y += 9;
+      } else if (b.t === 'equiptable'){
+        y = pdfEnsureSpace(doc, y, 45, headerTitle);
+        doc.autoTable({
+          startY: y, margin:{ left:marginX, right:marginX }, theme:'grid',
+          styles:{ font:'helvetica', fontSize:8, textColor:PDF_C.ink, cellPadding:2.6, lineColor:PDF_C.line, lineWidth:0.25, valign:'top' },
+          headStyles:{ fillColor:PDF_C.surface2, textColor:PDF_C.ink, fontStyle:'bold' },
+          columnStyles:{ 0:{ cellWidth: contentW*0.32 }, 2:{ cellWidth: contentW*0.24 } },
+          head: [['Outils de mesure','Précision','Commentaire']],
+          body: [[
+            'TA Scope + thermomètre infrarouge',
+            pdfSafeText('1. Débit\n2. Pression différentielle (ΔP)\n3. Température\n4. Puissance thermique\n5. Étalonnage intégré\n6. Plage de mesure\n7. Logiciel embarqué'),
+            '—',
+          ]],
+        });
+        y = doc.lastAutoTable.finalY;
+      }
+    });
+    return y;
+  }
+
+  function pdfRenderAnnexesTable(doc, marginX, contentW, y, headerTitle){
+    y = pdfEnsureSpace(doc, y, 45, headerTitle);
+    doc.setFont('helvetica','bold'); doc.setFontSize(11.5); doc.setTextColor(...PDF_C.cold);
+    doc.text('5. ANNEXES :', marginX, y+2);
+    doc.setDrawColor(...PDF_C.cold); doc.setLineWidth(0.35);
+    doc.line(marginX, y+3.6, marginX + doc.getTextWidth('5. ANNEXES :'), y+3.6);
+    y += 10;
+    doc.autoTable({
+      startY: y, margin:{ left:marginX, right:marginX }, theme:'grid',
+      styles:{ font:'helvetica', fontSize:8.8, textColor:PDF_C.ink, cellPadding:3, lineColor:PDF_C.line, lineWidth:0.25 },
+      headStyles:{ fillColor:PDF_C.ink, textColor:255, fontStyle:'bold' },
+      columnStyles:{ 0:{ cellWidth: 22, halign:'center' } },
+      head: [['N° Annexe','Titre']],
+      body: [
+        ['1', "Tableau de relevé d'équilibrage"],
+        ['2', "Tableau d'enregistrement des températures moyennes"],
+        ['3', 'Synoptique hydraulique simplifié'],
+        ['4', 'Photos'],
+      ],
+    });
+    return doc.lastAutoTable.finalY;
+  }
+
   async function buildReportPdf(d, s){
     const doc = pdfNewDoc('portrait');
     const pageW = doc.internal.pageSize.getWidth();
@@ -2952,6 +3237,13 @@ svg.leaflet-zoom-animated{will-change:transform}
       doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(...PDF_C.inkSoft);
       doc.text(d.notes, marginX, y, { maxWidth: contentW });
     }
+
+    /* ---- Pages "écrites en dur" : généralités, méthodologie, considérations, équipement d'essai, méthode de mesure ---- */
+    doc.addPage('a4','portrait');
+    let yMeth = pdfRenderMethodology(doc, d, marginX, contentW);
+
+    /* ---- Annexes (sommaire) ---- */
+    pdfRenderAnnexesTable(doc, marginX, contentW, yMeth, "Généralités et méthodologie d'équilibrage");
 
     /* ---- Page 3 : relevé d'équilibrage (paysage) ---- */
     doc.addPage('a4','landscape');
