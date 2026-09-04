@@ -1,0 +1,2319 @@
+<title>Calorif Suivi</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Archivo:wght@700;800;900&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap');
+
+  :root{
+    color-scheme: light;
+    --page:#eef0ee;
+    --page-line: rgba(18,24,26,0.05);
+    --surface:#ffffff;
+    --surface-2:#f6f7f6;
+    --surface-3:#ecefee;
+    --ink-primary:#12181a;
+    --ink-secondary:#4b5658;
+    --ink-muted:#7c8688;
+    --line:#d7dcda;
+    --line-strong:#b9c0be;
+    --accent:#c9691b;
+    --accent-ink:#1a1206;
+    --accent-soft:#f4e3d0;
+    --cold:#2a6ca8;
+    --cold-soft:#dbe9f4;
+    --warm:#c9691b;
+    --warm-soft:#f4e3d0;
+    --good:#0ca30c;
+    --good-soft:#e0f3df;
+    --warning:#a86200;
+    --warning-soft:#fbe9cf;
+    --critical:#c53a3a;
+    --critical-soft:#fbe1e1;
+    --shadow: 0 1px 2px rgba(18,24,26,0.06), 0 6px 20px -8px rgba(18,24,26,0.16);
+    --font-display:'Archivo', 'Arial Narrow', sans-serif;
+    --font-body:'IBM Plex Sans', system-ui, -apple-system, sans-serif;
+    --font-mono:'IBM Plex Mono', ui-monospace, 'SFMono-Regular', monospace;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      color-scheme: dark;
+      --page:#0f1213;
+      --page-line: rgba(255,255,255,0.045);
+      --surface:#171d1f;
+      --surface-2:#1c2224;
+      --surface-3:#222a2c;
+      --ink-primary:#f0f3f2;
+      --ink-secondary:#aab4b4;
+      --ink-muted:#78827f;
+      --line:#2b3335;
+      --line-strong:#3a4547;
+      --accent:#e08a3e;
+      --accent-ink:#1a1206;
+      --accent-soft:#3a2a17;
+      --cold:#5c9bd6;
+      --cold-soft:#1c2c3a;
+      --warm:#e08a3e;
+      --warm-soft:#3a2a17;
+      --good:#3fc23f;
+      --good-soft:#173a17;
+      --warning:#e0a439;
+      --warning-soft:#3a2f14;
+      --critical:#e2696b;
+      --critical-soft:#3a1c1c;
+      --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 10px 24px -10px rgba(0,0,0,0.6);
+    }
+  }
+  :root[data-theme="dark"]{
+    color-scheme: dark;
+    --page:#0f1213;
+    --page-line: rgba(255,255,255,0.045);
+    --surface:#171d1f;
+    --surface-2:#1c2224;
+    --surface-3:#222a2c;
+    --ink-primary:#f0f3f2;
+    --ink-secondary:#aab4b4;
+    --ink-muted:#78827f;
+    --line:#2b3335;
+    --line-strong:#3a4547;
+    --accent:#e08a3e;
+    --accent-ink:#1a1206;
+    --accent-soft:#3a2a17;
+    --cold:#5c9bd6;
+    --cold-soft:#1c2c3a;
+    --warm:#e08a3e;
+    --warm-soft:#3a2a17;
+    --good:#3fc23f;
+    --good-soft:#173a17;
+    --warning:#e0a439;
+    --warning-soft:#3a2f14;
+    --critical:#e2696b;
+    --critical-soft:#3a1c1c;
+    --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 10px 24px -10px rgba(0,0,0,0.6);
+  }
+
+  *{ box-sizing:border-box; }
+  html,body{ height:100%; }
+  body{
+    margin:0;
+    background:
+      repeating-linear-gradient(0deg, var(--page-line) 0 1px, transparent 1px 28px),
+      repeating-linear-gradient(90deg, var(--page-line) 0 1px, transparent 1px 28px),
+      var(--page);
+    color:var(--ink-primary);
+    font-family:var(--font-body);
+    font-size:14.5px;
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3{ font-family:var(--font-display); font-weight:800; letter-spacing:0.01em; text-wrap:balance; margin:0; }
+  .mono{ font-family:var(--font-mono); font-variant-numeric:tabular-nums; }
+  button{ font-family:inherit; }
+  a{ color:inherit; }
+  ::selection{ background:var(--accent-soft); }
+  :focus-visible{ outline:2px solid var(--accent); outline-offset:2px; border-radius:4px; }
+
+  #app{ display:flex; min-height:100%; }
+
+  /* ---------- Sidebar ---------- */
+  .rail{
+    width:250px; flex-shrink:0;
+    background:var(--surface);
+    border-right:1px solid var(--line);
+    display:flex; flex-direction:column;
+    position:sticky; top:0; height:100vh;
+  }
+  .rail-brand{
+    padding:22px 20px 16px;
+    border-bottom:1px solid var(--line);
+  }
+  .rail-brand .mark{
+    display:flex; align-items:center; gap:10px;
+  }
+  .rail-brand .mark-icon{
+    width:34px; height:34px; border-radius:8px;
+    background:var(--accent); color:var(--accent-ink);
+    display:flex; align-items:center; justify-content:center;
+    flex-shrink:0;
+  }
+  .rail-brand .mark-icon svg{ width:19px; height:19px; }
+  .rail-brand .word{
+    font-family:var(--font-display); font-weight:900; font-size:15.5px;
+    letter-spacing:0.06em; text-transform:uppercase; line-height:1.15;
+  }
+  .rail-brand .sub{
+    font-size:10.5px; color:var(--ink-muted); letter-spacing:0.08em;
+    text-transform:uppercase; margin-top:2px;
+  }
+  .rail-nav{ padding:14px 12px; display:flex; flex-direction:column; gap:2px; }
+  .rail-nav button{
+    display:flex; align-items:center; gap:10px;
+    padding:9px 12px; border-radius:7px; border:none; background:none;
+    color:var(--ink-secondary); font-size:13.5px; font-weight:500;
+    cursor:pointer; text-align:left; width:100%;
+  }
+  .rail-nav button svg{ width:16px; height:16px; flex-shrink:0; opacity:0.85; }
+  .rail-nav button:hover{ background:var(--surface-2); color:var(--ink-primary); }
+  .rail-nav button.active{ background:var(--accent-soft); color:var(--accent-ink); }
+  :root[data-theme="dark"] .rail-nav button.active, @media (prefers-color-scheme:dark){ }
+  .rail-nav button.active{ color:var(--accent); background:var(--accent-soft); }
+
+  .rail-list{ flex:1; overflow-y:auto; padding:4px 12px 12px; }
+  .rail-list-title{
+    font-size:10.5px; text-transform:uppercase; letter-spacing:0.09em;
+    color:var(--ink-muted); padding:14px 12px 6px;
+  }
+  .rail-item{
+    display:flex; flex-direction:column; gap:3px;
+    padding:8px 12px; border-radius:7px; cursor:pointer;
+    border:1px solid transparent;
+  }
+  .rail-item:hover{ background:var(--surface-2); }
+  .rail-item.active{ background:var(--surface-2); border-color:var(--line); }
+  .rail-item .rt{ font-size:12.5px; font-weight:600; color:var(--ink-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .rail-item .rb{ font-size:11px; color:var(--ink-muted); display:flex; align-items:center; gap:6px; }
+
+  .rail-foot{
+    padding:12px 20px 16px; border-top:1px solid var(--line);
+    font-size:10.5px; color:var(--ink-muted); line-height:1.5;
+  }
+
+  /* ---------- Main ---------- */
+  .main{ flex:1; min-width:0; padding:28px 34px 60px; max-width:1180px; }
+  .topbar{
+    display:flex; align-items:baseline; justify-content:space-between;
+    gap:16px; margin-bottom:22px; flex-wrap:wrap;
+  }
+  .topbar .eyebrow{
+    font-size:11px; text-transform:uppercase; letter-spacing:0.1em;
+    color:var(--ink-muted); margin-bottom:4px;
+  }
+  .topbar h1{ font-size:24px; }
+  .topbar-actions{ display:flex; gap:8px; }
+
+  .btn{
+    display:inline-flex; align-items:center; gap:7px;
+    padding:9px 15px; border-radius:8px; border:1px solid var(--line-strong);
+    background:var(--surface); color:var(--ink-primary);
+    font-size:13px; font-weight:600; cursor:pointer; white-space:nowrap;
+  }
+  .btn svg{ width:14px; height:14px; }
+  .btn:hover{ background:var(--surface-2); }
+  .btn-primary{ background:var(--accent); border-color:var(--accent); color:var(--accent-ink); }
+  .btn-primary:hover{ filter:brightness(1.06); }
+  .btn-ghost{ border-color:transparent; background:transparent; }
+  .btn-ghost:hover{ background:var(--surface-2); }
+  .btn-sm{ padding:6px 11px; font-size:12px; }
+  .btn-danger{ color:var(--critical); }
+
+  /* Panel = "instrument bezel" card */
+  .panel{
+    position:relative;
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:12px;
+    box-shadow:var(--shadow);
+    padding:20px 22px;
+  }
+  .panel::before, .panel::after,
+  .panel .tick-br, .panel .tick-bl{
+    content:''; position:absolute; width:9px; height:9px;
+    border-color:var(--line-strong); pointer-events:none;
+  }
+  .panel::before{ top:-1px; left:-1px; border-top:2px solid; border-left:2px solid; border-radius:3px 0 0 0; }
+  .panel::after{ top:-1px; right:-1px; border-top:2px solid; border-right:2px solid; border-radius:0 3px 0 0; }
+  .panel .tick-bl{ bottom:-1px; left:-1px; border-bottom:2px solid var(--line-strong); border-left:2px solid var(--line-strong); border-radius:0 0 0 3px; }
+  .panel .tick-br{ bottom:-1px; right:-1px; border-bottom:2px solid var(--line-strong); border-right:2px solid var(--line-strong); border-radius:0 0 3px 0; }
+
+  .panel-title{
+    font-size:11px; text-transform:uppercase; letter-spacing:0.09em;
+    color:var(--ink-muted); font-weight:600; margin-bottom:14px;
+    display:flex; align-items:center; justify-content:space-between;
+  }
+
+  .grid{ display:grid; gap:16px; }
+  .g2{ grid-template-columns:1fr 1fr; }
+  .g3{ grid-template-columns:1fr 1fr 1fr; }
+  @media (max-width:900px){ .g2,.g3{ grid-template-columns:1fr; } }
+
+  .stack{ display:flex; flex-direction:column; gap:16px; }
+
+  /* Dashboard */
+  .kpi-row{ display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:20px; }
+  @media (max-width:900px){ .kpi-row{ grid-template-columns:repeat(2,1fr); } }
+  .kpi{
+    background:var(--surface); border:1px solid var(--line); border-radius:12px;
+    padding:16px 18px;
+  }
+  .kpi .kv{ font-family:var(--font-mono); font-size:26px; font-weight:600; line-height:1; }
+  .kpi .kl{ font-size:11.5px; color:var(--ink-muted); margin-top:8px; }
+
+  .mini-row{ display:grid; grid-template-columns:repeat(5,1fr); gap:12px; }
+  @media (max-width:900px){ .mini-row{ grid-template-columns:repeat(2,1fr); } }
+  .mini{ background:var(--surface-2); border:1px solid var(--line); border-radius:10px; padding:11px 13px; }
+  .mini .mv{ font-family:var(--font-mono); font-size:16.5px; font-weight:600; line-height:1.15; }
+  .mini .ml{ font-size:10.5px; color:var(--ink-muted); margin-top:5px; }
+
+  table{ border-collapse:collapse; width:100%; font-size:13px; }
+  th{ text-align:left; font-size:10.5px; text-transform:uppercase; letter-spacing:0.06em; color:var(--ink-muted); font-weight:600; padding:0 10px 8px; border-bottom:1px solid var(--line); }
+  td{ padding:10px 10px; border-bottom:1px solid var(--line); vertical-align:middle; }
+  tr:last-child td{ border-bottom:none; }
+  .dossier-row{ cursor:pointer; }
+  .dossier-row:hover{ background:var(--surface-2); }
+  .cell-strong{ font-weight:600; }
+  .cell-muted{ color:var(--ink-muted); font-size:12px; }
+  .table-scroll{ overflow-x:auto; }
+
+  .pill{
+    display:inline-flex; align-items:center; gap:6px;
+    padding:4px 10px 4px 8px; border-radius:99px; font-size:11.5px; font-weight:600;
+    white-space:nowrap;
+  }
+  .pill .dot{ width:6px; height:6px; border-radius:50%; background:currentColor; }
+  .pill-planifie{ background:var(--surface-3); color:var(--ink-secondary); }
+  .pill-avant{ background:var(--cold-soft); color:var(--cold); }
+  .pill-calorifuge{ background:var(--warm-soft); color:var(--warm); }
+  .pill-apres{ background:var(--warm-soft); color:var(--warm); }
+  .pill-pret{ background:var(--good-soft); color:var(--good); }
+
+  .badge-good{ background:var(--good-soft); color:var(--good); }
+  .badge-warn{ background:var(--warning-soft); color:var(--warning); }
+  .badge{ display:inline-flex; align-items:center; gap:7px; padding:6px 12px; border-radius:8px; font-size:12.5px; font-weight:700; }
+  .badge svg{ width:14px; height:14px; }
+
+  .empty{
+    text-align:center; padding:50px 20px; color:var(--ink-muted);
+  }
+  .empty svg{ width:34px; height:34px; opacity:0.4; margin-bottom:10px; }
+
+  /* Form */
+  .field{ display:flex; flex-direction:column; gap:6px; }
+  .field label{ font-size:11.5px; font-weight:600; color:var(--ink-secondary); display:flex; align-items:center; justify-content:space-between; }
+  .field .hint{ font-weight:400; color:var(--ink-muted); font-size:10.5px; }
+  .ac-wrap{ position:relative; }
+  .ac-list{
+    position:absolute; top:calc(100% + 4px); left:0; right:0; z-index:40;
+    background:var(--surface); border:1px solid var(--line); border-radius:10px;
+    box-shadow:0 10px 28px rgba(0,0,0,0.16); max-height:230px; overflow-y:auto; padding:4px;
+  }
+  .ac-item{ display:flex; justify-content:space-between; gap:10px; padding:7px 9px; border-radius:7px; font-size:12.5px; cursor:pointer; }
+  .ac-item:hover, .ac-item.active{ background:var(--surface-2); }
+  .ac-item .ac-cp{ font-family:var(--font-mono); color:var(--ink-muted); font-size:11px; }
+  .ac-empty{ padding:8px 10px; font-size:11.5px; color:var(--ink-muted); }
+  input[type=text], input[type=number], input[type=date], input[type=tel], input[type=email], textarea, select{
+    font-family:var(--font-body); font-size:13.5px; color:var(--ink-primary);
+    background:var(--surface-2); border:1px solid var(--line); border-radius:8px;
+    padding:9px 11px; width:100%;
+  }
+  input.mono-input{ font-family:var(--font-mono); }
+  input:focus, textarea:focus, select:focus{ outline:2px solid var(--accent); outline-offset:0; border-color:var(--accent); background:var(--surface); }
+  textarea{ resize:vertical; min-height:64px; }
+
+  .section-head{ display:flex; align-items:center; gap:9px; margin-bottom:2px; }
+  .section-num{
+    font-family:var(--font-mono); font-size:11px; font-weight:600;
+    width:22px; height:22px; border-radius:50%; background:var(--surface-3);
+    color:var(--ink-secondary); display:flex; align-items:center; justify-content:center; flex-shrink:0;
+  }
+  .section-title{ font-family:var(--font-display); font-weight:800; font-size:15px; }
+  .section-desc{ font-size:12px; color:var(--ink-muted); margin:2px 0 0 31px; }
+
+  /* Vanne balancing table */
+  .vanne-table{ min-width:1120px; }
+  .vanne-table th, .vanne-table td{ padding:6px 7px; white-space:nowrap; }
+  .vanne-table thead tr:first-child th{ border-bottom:1px solid var(--line); }
+  .vanne-table thead tr:last-child th{ font-size:10px; font-weight:600; color:var(--ink-muted); text-transform:none; letter-spacing:0; }
+  .vanne-table th.grp{ text-align:center; font-size:10.5px; letter-spacing:0.04em; border-radius:4px 4px 0 0; }
+  .vanne-table th.grp-avant{ background:var(--cold-soft); color:var(--cold); }
+  .vanne-table th.grp-apres{ background:var(--warm-soft); color:var(--warm); }
+  .vanne-table input, .vanne-table select{ padding:5px 6px; font-size:12.5px; }
+  .vanne-table .rm-btn{ background:none; border:none; color:var(--ink-muted); cursor:pointer; padding:4px; }
+  .vanne-table .rm-btn:hover{ color:var(--critical); }
+  .vanne-table .delta-cell{ text-align:center; }
+
+  .report-vanne-table th.grp-avant{ background:var(--cold-soft); color:var(--cold); }
+  .report-vanne-table th.grp-apres{ background:var(--warm-soft); color:var(--warm); }
+  .report-vanne-table th, .report-vanne-table td{ padding:8px 9px; white-space:nowrap; }
+  .report-vanne-table th.grp{ text-align:center; font-size:10.5px; letter-spacing:0.04em; }
+  .report-vanne-table thead tr:last-child th{ font-size:10px; font-weight:600; color:var(--ink-muted); text-transform:none; letter-spacing:0; }
+
+  /* Points de mesure + logs de température (avant/après) */
+  .points-table{ min-width:640px; }
+  .points-table th, .points-table td, .log-table th, .log-table td{ padding:6px 7px; white-space:nowrap; }
+  .points-table input, .points-table select, .log-table input{ padding:5px 6px; font-size:12.5px; }
+  .points-table .rm-btn, .log-table .rm-btn{ background:none; border:none; color:var(--ink-muted); cursor:pointer; padding:4px; }
+  .points-table .rm-btn:hover, .log-table .rm-btn:hover{ color:var(--critical); }
+  .log-table{ min-width:920px; }
+  .log-table thead tr:last-child th{ font-size:10px; font-weight:600; color:var(--ink-muted); text-transform:none; letter-spacing:0; }
+  .log-table th.grp-amb{ text-align:center; font-size:10.5px; letter-spacing:0.04em; background:var(--surface-3); color:var(--ink-secondary); }
+  .log-table input[data-k="date"]{ width:88px; }
+  .log-table input[data-k="heure"]{ width:70px; }
+  .log-table .amb-input{ width:56px; }
+  .log-panel-avant .panel-title{ color:var(--cold); }
+  .log-panel-apres .panel-title{ color:var(--warm); }
+
+  /* Photos */
+  .photo-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
+  @media (max-width:760px){ .photo-grid{ grid-template-columns:1fr; } }
+  .photo-slot{
+    border:1.5px dashed var(--line-strong); border-radius:10px;
+    aspect-ratio:4/3; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:8px; cursor:pointer; position:relative; overflow:hidden; background:var(--surface-2);
+    text-align:center; padding:10px;
+  }
+  .photo-slot:hover{ border-color:var(--accent); }
+  .photo-slot input{ display:none; }
+  .photo-slot svg{ width:22px; height:22px; color:var(--ink-muted); }
+  .photo-slot .pl{ font-size:11.5px; font-weight:600; color:var(--ink-secondary); }
+  .photo-slot .ps{ font-size:10px; color:var(--ink-muted); }
+  .photo-slot img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+  .photo-slot .cap{
+    position:absolute; bottom:0; left:0; right:0; background:rgba(10,14,15,0.72); color:#fff;
+    font-size:10px; padding:5px 8px; display:flex; justify-content:space-between; align-items:center;
+  }
+  .photo-slot .cap button{ background:none; border:none; color:#fff; font-size:10px; cursor:pointer; text-decoration:underline; }
+
+  .form-actions{
+    display:flex; justify-content:flex-end; gap:10px; padding-top:6px;
+  }
+
+  /* Cadastre / geo panels */
+  .geo-readout{ display:flex; flex-direction:column; gap:10px; margin-top:12px; }
+  .geo-kv{ display:flex; justify-content:space-between; align-items:baseline; font-size:12.5px; padding:6px 0; border-bottom:1px dashed var(--line); }
+  .geo-kv:last-child{ border-bottom:none; }
+  .geo-kv .k{ color:var(--ink-muted); }
+  .geo-kv .v{ font-family:var(--font-mono); font-weight:600; }
+  .geo-caption{ font-size:10.5px; color:var(--ink-muted); margin-top:10px; line-height:1.5; }
+  .cadastre-links{ display:flex; gap:8px; margin-top:10px; flex-wrap:wrap; }
+  .cadastre-links .btn{ text-decoration:none; }
+
+  /* Report */
+  .report-header{
+    display:flex; justify-content:space-between; gap:20px; flex-wrap:wrap;
+    padding-bottom:18px; margin-bottom:18px; border-bottom:1px solid var(--line);
+  }
+  .report-header .rd{ font-size:12px; color:var(--ink-muted); }
+  .report-header .rd b{ color:var(--ink-primary); }
+  .verdict{ display:flex; align-items:center; gap:10px; }
+
+  .chart-wrap{ margin-top:6px; }
+  .chart-legend{ display:flex; gap:18px; margin-bottom:10px; font-size:12px; }
+  .chart-legend .li{ display:flex; align-items:center; gap:7px; color:var(--ink-secondary); font-weight:600; }
+  .chart-legend .sw{ width:10px; height:10px; border-radius:3px; }
+  .chart-toggle{ margin-top:10px; }
+  .chart-toggle button{ font-size:11.5px; color:var(--ink-muted); background:none; border:none; cursor:pointer; text-decoration:underline; padding:0; }
+
+  .photo-gallery{ display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
+  @media (max-width:760px){ .photo-gallery{ grid-template-columns:1fr; } }
+  .photo-gallery figure{ margin:0; border:1px solid var(--line); border-radius:10px; overflow:hidden; background:var(--surface-2); }
+  .photo-gallery img{ width:100%; aspect-ratio:4/3; object-fit:cover; display:block; }
+  .photo-gallery .ph-empty{ width:100%; aspect-ratio:4/3; display:flex; align-items:center; justify-content:center; color:var(--ink-muted); font-size:11px; }
+  .photo-gallery .ph-empty svg{ width:25px; height:25px; opacity:.4; }
+  .photo-gallery figcaption{ padding:8px 10px; font-size:11px; color:var(--ink-secondary); font-weight:600; border-top:1px solid var(--line); }
+
+  .toast{
+    position:fixed; bottom:22px; left:50%; transform:translateX(-50%);
+    background:var(--ink-primary); color:var(--page); padding:10px 18px; border-radius:8px;
+    font-size:12.5px; font-weight:600; box-shadow:var(--shadow); z-index:50;
+    opacity:0; pointer-events:none; transition:opacity .2s ease, transform .2s ease;
+  }
+  .toast.show{ opacity:1; transform:translateX(-50%) translateY(-4px); }
+
+  @media (max-width:860px){
+    #app{ flex-direction:column; }
+    .rail{ width:100%; height:auto; position:relative; flex-direction:row; flex-wrap:wrap; }
+    .rail-brand{ border-bottom:none; padding:16px 18px 10px; }
+    .rail-nav{ flex-direction:row; padding:0 12px 12px; }
+    .rail-list{ display:none; }
+    .rail-foot{ display:none; }
+    .main{ padding:22px 18px 50px; }
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ transition:none !important; animation:none !important; }
+  }
+</style>
+
+<div id="app"></div>
+<div class="toast" id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/4.2.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/5.0.8/jspdf.plugin.autotable.min.js"></script>
+<script>
+(function(){
+
+  /* ============================= ICONS ============================= */
+  const ICONS = {
+    gauge:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 21a9 9 0 1 0-9-9"/><path d="M12 12l4-3.2"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/></svg>',
+    plus:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>',
+    grid:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1.2"/><rect x="14" y="3" width="7" height="7" rx="1.2"/><rect x="3" y="14" width="7" height="7" rx="1.2"/><rect x="14" y="14" width="7" height="7" rx="1.2"/></svg>',
+    file:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 3h8l5 5v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z"/><path d="M14 3v5h5"/></svg>',
+    pin:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 21s7-6.1 7-11.5A7 7 0 0 0 5 9.5C5 14.9 12 21 12 21Z"/><circle cx="12" cy="9.5" r="2.3"/></svg>',
+    camera:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 8h3.5L9 5.5h6L16.5 8H20a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1Z"/><circle cx="12" cy="13.5" r="3.3"/></svg>',
+    check:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20 6 9 17l-5-5"/></svg>',
+    warn:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3 2 20h20L12 3Z"/><path d="M12 10v4"/><circle cx="12" cy="17" r="0.6" fill="currentColor" stroke="none"/></svg>',
+    dl:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v13m0 0-4.5-4.5M12 16l4.5-4.5"/><path d="M4 19h16"/></svg>',
+    back:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5m0 0 6-6m-6 6 6 6"/></svg>',
+    trash:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2m-8 0v12a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V7"/></svg>',
+    x:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6 6 18"/></svg>',
+    thermo:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 14.4V5a2 2 0 0 0-4 0v9.4a4 4 0 1 0 4 0Z"/></svg>',
+    ext:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 4h6v6M20 4 10 14"/><path d="M18 13v6a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h6"/></svg>',
+    photo:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3.25" y="4.5" width="17.5" height="15" rx="2.2"/><circle cx="8.7" cy="9.6" r="1.4"/><path d="M4.3 16.8l4.6-4.4a1.5 1.5 0 0 1 2 0L15 16.2"/><path d="M13.6 14.5l1.7-1.6a1.5 1.5 0 0 1 2 0l3.2 3"/></svg>',
+  };
+  function icon(name){ return ICONS[name] || ''; }
+
+  /* ============================= UTIL ============================= */
+  function uid(p){ return (p||'d') + '_' + Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+  function fmt1(n){ return (Math.round(n*10)/10).toFixed(1); }
+  function toast(msg){
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.classList.add('show');
+    clearTimeout(toast._h);
+    toast._h = setTimeout(()=>t.classList.remove('show'), 2600);
+  }
+  function seedHash(str){
+    let h = 0;
+    for (let i=0;i<String(str).length;i++){ h = (h*31 + String(str).charCodeAt(i)) | 0; }
+    return Math.abs(h);
+  }
+  // Greedy word-wrap into up to 2 tspan lines for an SVG axis label.
+  function wrapSvgLabel(text, x, y, maxChars, fontSize){
+    const words = String(text||'').split(' ');
+    const lines = [];
+    let cur = '';
+    words.forEach(w => {
+      const candidate = cur ? cur + ' ' + w : w;
+      if (candidate.length > maxChars && cur){ lines.push(cur); cur = w; }
+      else { cur = candidate; }
+    });
+    if (cur) lines.push(cur);
+    const shown = lines.slice(0, 2);
+    if (lines.length > 2) shown[1] = shown[1].replace(/\s*\S*$/, '') + '…';
+    return `<text x="${x}" y="${y}" text-anchor="middle" font-size="${fontSize}" fill="var(--ink-muted)">` +
+      shown.map((line, i) => `<tspan x="${x}" dy="${i===0?0:fontSize+1}">${esc(line)}</tspan>`).join('') +
+      `</text>`;
+  }
+
+  const STATUS = {
+    planifie:   { label:'Planifié',               cls:'pill-planifie' },
+    avant:      { label:'Mesures avant',           cls:'pill-avant' },
+    calorifuge: { label:'Calorifugeage réalisé',   cls:'pill-calorifuge' },
+    apres:      { label:'Mesures après',           cls:'pill-apres' },
+    pret:       { label:'Rapport prêt',            cls:'pill-pret' },
+  };
+  const STATUS_ORDER = ['planifie','avant','calorifuge','apres','pret'];
+
+  /* Utilisateurs du CRM — plusieurs profils (administrateur, direction,
+     commercial, technicien) partagent le même outil ; seuls les techniciens
+     sont proposés pour l'assignation d'une intervention. */
+  const ROLES = {
+    administrateur: 'Administrateur',
+    direction:      'Direction',
+    commercial:     'Commercial',
+    technicien:     'Technicien',
+  };
+  function seedUsers(){
+    return [
+      { id:'u_admin1', nom:'Karim Nait',        role:'administrateur' },
+      { id:'u_dir1',   nom:'Élise Ferrand',      role:'direction' },
+      { id:'u_com1',   nom:'Julien Perrot',      role:'commercial' },
+      { id:'u_tech1',  nom:'Mathieu Rocher',     role:'technicien' },
+      { id:'u_tech2',  nom:'Ahmed Belkacem',     role:'technicien' },
+      { id:'u_tech3',  nom:'Nolwenn Guillou',    role:'technicien' },
+    ];
+  }
+  function techniciens(){ return S.users.filter(u => u.role === 'technicien'); }
+  function userName(id){ const u = S.users.find(u => u.id === id); return u ? u.nom : ''; }
+
+  /* Auto-complétion Code postal / Ville — jeu de communes local illustratif
+     (grandes villes + secteur d'intervention habituel), non exhaustif. Le
+     maquette tourne dans un bac à sable qui bloque les appels réseau
+     externes (voir cadastre) : une vraie auto-complétion adresse complète
+     appellerait l'API adresse.data.gouv.fr (gratuite, sans clé) côté
+     serveur, sur le CRM de production. */
+  const COMMUNES = [
+    ['35000','Rennes'],['35200','Rennes'],['35700','Rennes'],['35410','Châteaugiron'],
+    ['35510','Cesson-Sévigné'],['35760','Saint-Grégoire'],['35170','Bruz'],['35830','Betton'],
+    ['35500','Vitré'],['35300','Fougères'],['35600','Redon'],['35400','Saint-Malo'],
+    ['35800','Dinard'],['35470','Bain-de-Bretagne'],['35270','Combourg'],
+    ['75001','Paris'],['13001','Marseille'],['69001','Lyon'],['31000','Toulouse'],
+    ['06000','Nice'],['44000','Nantes'],['67000','Strasbourg'],['34000','Montpellier'],
+    ['33000','Bordeaux'],['59000','Lille'],['51100','Reims'],['76600','Le Havre'],
+    ['42000','Saint-Étienne'],['83000','Toulon'],['38000','Grenoble'],['21000','Dijon'],
+    ['49000','Angers'],['30000','Nîmes'],['72000','Le Mans'],['13100','Aix-en-Provence'],
+    ['63000','Clermont-Ferrand'],['29200','Brest'],['37000','Tours'],['87000','Limoges'],
+    ['80000','Amiens'],['74000','Annecy'],['66000','Perpignan'],['57000','Metz'],
+    ['25000','Besançon'],['45000','Orléans'],['76000','Rouen'],['68100','Mulhouse'],
+    ['14000','Caen'],['54000','Nancy'],['86000','Poitiers'],['59140','Dunkerque'],
+    ['68000','Colmar'],['78000','Versailles'],['17000','La Rochelle'],['64000','Pau'],
+    ['18000','Bourges'],['20000','Ajaccio'],['29000','Quimper'],['73000','Chambéry'],
+    ['56100','Lorient'],['56000','Vannes'],['10000','Troyes'],['60000','Beauvais'],
+    ['16000','Angoulême'],['64100','Bayonne'],['41000','Blois'],['79000','Niort'],
+    ['26000','Valence'],['84000','Avignon'],['34500','Béziers'],['50100','Cherbourg-en-Cotentin'],
+  ];
+  function normStr(s){ return String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,''); }
+  function matchCommunes(q, limit){
+    q = normStr(q).trim();
+    if (!q) return [];
+    const starts = [], contains = [];
+    const seen = new Set();
+    COMMUNES.forEach(([cp,ville]) => {
+      const key = cp+'|'+ville;
+      if (seen.has(key)) return;
+      const nv = normStr(ville);
+      if (cp.startsWith(q) || nv.startsWith(q)){ starts.push([cp,ville]); seen.add(key); }
+      else if (nv.includes(q)){ contains.push([cp,ville]); seen.add(key); }
+    });
+    return starts.concat(contains).slice(0, limit || 8);
+  }
+  function attachAddressAutocomplete(){
+    const cpInput = document.getElementById('f-cp');
+    const villeInput = document.getElementById('f-ville');
+    const cpList = document.getElementById('ac-cp');
+    const villeList = document.getElementById('ac-ville');
+    if (!cpInput || !villeInput || !cpList || !villeList) return;
+
+    function closeAll(){ cpList.hidden = true; villeList.hidden = true; }
+
+    function wire(input, listEl){
+      let items = [], active = -1;
+      function paint(){
+        const els = listEl.querySelectorAll('.ac-item');
+        els.forEach((el,i) => el.classList.toggle('active', i===active));
+      }
+      function open(){
+        items = matchCommunes(input.value);
+        active = -1;
+        if (!items.length){ listEl.hidden = true; listEl.innerHTML=''; return; }
+        listEl.innerHTML = items.map((it,i) =>
+          `<div class="ac-item" data-i="${i}"><span>${esc(it[1])}</span><span class="ac-cp">${esc(it[0])}</span></div>`
+        ).join('');
+        listEl.hidden = false;
+      }
+      function pick(it){
+        cpInput.value = it[0];
+        villeInput.value = it[1];
+        S.draft.adresse.cp = it[0];
+        S.draft.adresse.ville = it[1];
+        closeAll();
+      }
+      input.addEventListener('input', open);
+      input.addEventListener('focus', () => { if (input.value) open(); });
+      input.addEventListener('keydown', (e) => {
+        if (listEl.hidden) return;
+        if (e.key === 'ArrowDown'){ e.preventDefault(); active = Math.min(active+1, items.length-1); paint(); }
+        else if (e.key === 'ArrowUp'){ e.preventDefault(); active = Math.max(active-1, 0); paint(); }
+        else if (e.key === 'Enter'){ if (active>=0){ e.preventDefault(); pick(items[active]); } }
+        else if (e.key === 'Escape'){ listEl.hidden = true; }
+      });
+      input.addEventListener('blur', () => setTimeout(() => { listEl.hidden = true; }, 120));
+      listEl.addEventListener('mousedown', (e) => {
+        const item = e.target.closest('.ac-item');
+        if (!item) return;
+        e.preventDefault();
+        pick(items[Number(item.dataset.i)]);
+      });
+    }
+    wire(cpInput, cpList);
+    wire(villeInput, villeList);
+  }
+
+  /* ============================= SEED DATA ============================= */
+  function seedDossiers(){
+    return [
+      {
+        id:'d_seed1',
+        numero:'2026-0904118',
+        residence:'Résidence Les Tilleuls',
+        client:{ nom:'Copropriété Les Tilleuls', telephone:'02 99 41 27 06', email:'syndic@lestilleuls-rennes.fr' },
+        adresse:{ rue:'18 rue des Cerisiers', cp:'35700', ville:'Rennes' },
+        lat:'48.1147', lng:'-1.6794', refCadastrale:'035/CR/0248',
+        technicienId:'u_tech1', dateIntervention:'2026-03-18', gardien:{ nom:'Yves Kervadec', telephone:'06 71 34 82 90' },
+        typeLogement:{ nbLogements:'48', typeEnergie:'CPCU', surfaceM2:'3120', nbSousStations:'5', tempExterieure:'-0.4' },
+        statut:'pret',
+        vannes:[
+          { id:'v1', reperage:'T1', sonde:'oui', marque:'TAstad',  type:'S', dn:'11',
+            avant:{ debit:10,  tours:127, tDepart:30, tRetour:40 }, debitTheoriqueVise:100,
+            apres:{ debit:40,  tours:20,  tDepart:30, tRetour:12 } },
+          { id:'v2', reperage:'T2', sonde:'non', marque:'2',       type:'',  dn:'3',
+            avant:{ debit:127, tours:127, tDepart:6,  tRetour:7 },  debitTheoriqueVise:8,
+            apres:{ debit:127, tours:127, tDepart:11, tRetour:12 } },
+          { id:'v3', reperage:'T3', sonde:'oui', marque:'ta stad', type:'',  dn:'12',
+            avant:{ debit:127, tours:127, tDepart:74, tRetour:20 }, debitTheoriqueVise:14,
+            apres:{ debit:127, tours:127, tDepart:120,tRetour:110 } },
+        ],
+        pointsTemp:[
+          { id:'p1', batiment:'Bâtiment C', niveau:'1er étage', lieu:'Chambre', exposition:'Nord',  releve:23 },
+          { id:'p2', batiment:'Bâtiment C', niveau:'2e étage',  lieu:'Chambre', exposition:'Sud',   releve:19.4 },
+          { id:'p3', batiment:'Bâtiment C', niveau:'3e étage',  lieu:'Chambre', exposition:'Est',   releve:19.2 },
+          { id:'p4', batiment:'Bâtiment D', niveau:'Sous-sol',  lieu:'Chambre', exposition:'Ouest', releve:20 },
+          { id:'p5', batiment:'Bâtiment A', niveau:'Toit',      lieu:'Chambre', exposition:'Nord',  releve:11 },
+        ],
+        logsAvant:[
+          { id:'la1', date:'06/11/2025', heure:'10:00:00', tExt:12, amb:[14,19,21,12,25], ecartMax:13 },
+          { id:'la2', date:'17/11/2025', heure:'11:00:00', tExt:15, amb:[12,0,0,10,16],   ecartMax:1 },
+          { id:'la3', date:'03/11/2025', heure:'12:00:00', tExt:20, amb:[5,20,10,15,20],  ecartMax:0 },
+          { id:'la4', date:'12/12/0021', heure:'12:21:00', tExt:12, amb:[14,14,14,16,16], ecartMax:4 },
+          { id:'la5', date:'07/12/2025', heure:'07:07:00', tExt:7,  amb:[14,15,16,24,16], ecartMax:17 },
+        ],
+        logsApres:[
+          { id:'lp1', date:'04/12/2025', heure:'20:00:00', tExt:22, amb:[21,24,22,27,22], ecartMax:5 },
+          { id:'lp2', date:'05/12/2025', heure:'10:00:00', tExt:21, amb:[22,23,24,25,22], ecartMax:4 },
+          { id:'lp3', date:'12/12/1121', heure:'12:12:00', tExt:20, amb:[19,18,17,21,20], ecartMax:1 },
+        ],
+        photos:{ batiment:'', chaufferie:'', temperature:'' },
+        notes:'Réseau CPCU, calorifugeage des colonnes montantes et du sous-sol réalisé sur 3 jours.',
+        createdAt: Date.now() - 1000*60*60*24*20,
+      },
+      {
+        id:'d_seed2',
+        numero:'2026-0904142',
+        residence:'EHPAD Sainte-Anne',
+        client:{ nom:'EHPAD Sainte-Anne', telephone:'02 99 55 10 22', email:'direction@ehpad-ste-anne.fr' },
+        adresse:{ rue:'4 allée du Verger', cp:'35410', ville:'Châteaugiron' },
+        lat:'48.0508', lng:'-1.5027', refCadastrale:'035/AK/0117',
+        technicienId:'u_tech2', dateIntervention:'2026-09-22', gardien:{ nom:'Sophie Le Gall', telephone:'06 82 14 55 37' },
+        typeLogement:{ nbLogements:'', typeEnergie:'Gaz', surfaceM2:'', nbSousStations:'', tempExterieure:'' },
+        statut:'planifie',
+        vannes:[],
+        pointsTemp:[], logsAvant:[], logsApres:[],
+        photos:{ batiment:'', chaufferie:'', temperature:'' },
+        notes:'',
+        createdAt: Date.now() - 1000*60*60*24*2,
+      },
+    ];
+  }
+
+  function emptyVanne(){
+    return {
+      id: uid('v'),
+      reperage:'', sonde:'non', marque:'', type:'', dn:'',
+      avant:{ debit:null, tours:null, tDepart:null, tRetour:null },
+      debitTheoriqueVise:null,
+      apres:{ debit:null, tours:null, tDepart:null, tRetour:null },
+    };
+  }
+  function emptyPointTemp(){
+    return { id: uid('p'), batiment:'', niveau:'', lieu:'Chambre', exposition:'Nord', releve:null };
+  }
+  function emptyLogRow(){
+    return { id: uid('log'), date:'', heure:'', tExt:null, amb:[null,null,null,null,null], ecartMax:null };
+  }
+
+  function emptyDossier(){
+    return {
+      id:uid(),
+      numero:'',
+      residence:'',
+      client:{ nom:'', telephone:'', email:'' },
+      adresse:{ rue:'', cp:'', ville:'' },
+      lat:'', lng:'', refCadastrale:'',
+      technicienId:'', dateIntervention:'', gardien:{ nom:'', telephone:'' },
+      typeLogement:{ nbLogements:'', typeEnergie:'CPCU', surfaceM2:'', nbSousStations:'', tempExterieure:'' },
+      statut:'planifie',
+      vannes:[ emptyVanne() ],
+      pointsTemp:[ emptyPointTemp() ],
+      logsAvant:[], logsApres:[],
+      photos:{ batiment:'', chaufferie:'', temperature:'' },
+      notes:'',
+      createdAt: Date.now(),
+    };
+  }
+
+  /* ============================= STATE ============================= */
+  const S = {
+    view:'dashboard',       // dashboard | form | report
+    dossierId:null,
+    dossiers:{},             // id -> dossier
+    order:[],                 // ids in display order
+    db:null, downloads:null,
+    dbReady:false,
+    draft:null,               // working copy while editing
+    chartTable:{},             // dossierId -> bool (show table view)
+    users: seedUsers(),        // annuaire local des utilisateurs du CRM
+  };
+
+  function upsertLocal(d){
+    S.dossiers[d.id] = d;
+    if (!S.order.includes(d.id)) S.order.unshift(d.id);
+  }
+
+  function sortedDossiers(){
+    return S.order
+      .map(id => S.dossiers[id])
+      .filter(Boolean)
+      .sort((a,b) => (b.createdAt||0) - (a.createdAt||0));
+  }
+
+  /* ============================= PERSISTENCE ============================= */
+  async function initCapabilities(){
+    try{
+      if (window.claude && typeof window.claude.use === 'function'){
+        const [db, downloads] = await Promise.all([
+          window.claude.use('db').catch(()=>null),
+          window.claude.use('downloads').catch(()=>null),
+        ]);
+        S.db = db; S.downloads = downloads;
+      }
+    }catch(e){ /* design for absence */ }
+
+    if (S.db){
+      try{
+        S.db.collection('dossiers').onSnapshot(
+          (snap) => {
+            const map = {};
+            const order = [];
+            snap.docs.forEach(doc => {
+              const data = doc.data();
+              if (!data) return;
+              map[doc.id] = Object.assign({ id: doc.id }, data);
+              order.push(doc.id);
+            });
+            // first delivery: if store empty, seed it
+            if (!S.dbReady && snap.empty){
+              seedDossiers().forEach(d => S.db.collection('dossiers').doc(d.id).set(stripId(d)).catch(()=>{}));
+            } else {
+              S.dossiers = map;
+              S.order = order;
+            }
+            S.dbReady = true;
+            render();
+          },
+          (err) => { console.warn('db error', err); if(!S.dbReady){ seedDossiers().forEach(upsertLocal); S.dbReady=true; render(); } }
+        );
+      }catch(e){
+        seedDossiers().forEach(upsertLocal); S.dbReady = true; render();
+      }
+    } else {
+      seedDossiers().forEach(upsertLocal);
+      S.dbReady = true;
+      render();
+    }
+  }
+
+  function stripId(d){ const c = Object.assign({}, d); delete c.id; return c; }
+
+  async function saveDossier(d){
+    upsertLocal(d);
+    if (S.db){
+      try{
+        await S.db.collection('dossiers').doc(d.id).set(stripId(d));
+      }catch(e){
+        if (e && e.code === 'invalid_argument'){
+          toast('Dossier trop volumineux — réduisez la taille des photos.');
+        } else {
+          toast('Enregistrement local (synchronisation indisponible).');
+        }
+      }
+    }
+    render();
+  }
+
+  async function deleteDossier(id){
+    delete S.dossiers[id];
+    S.order = S.order.filter(x => x !== id);
+    if (S.db){ try{ await S.db.collection('dossiers').doc(id).delete(); }catch(e){} }
+    render();
+  }
+
+  /* ============================= NAV ============================= */
+  function normalizeDossier(d){
+    if (d.technicienId == null) d.technicienId = '';
+    if (!d.typeLogement || typeof d.typeLogement !== 'object'){
+      d.typeLogement = { nbLogements:'', typeEnergie:'CPCU', surfaceM2:'', nbSousStations:'', tempExterieure:'' };
+    }
+    if (!Array.isArray(d.vannes)) d.vannes = [];
+    if (!Array.isArray(d.pointsTemp)) d.pointsTemp = [];
+    if (!Array.isArray(d.logsAvant)) d.logsAvant = [];
+    if (!Array.isArray(d.logsApres)) d.logsApres = [];
+    d.logsAvant.forEach(r => { if (!Array.isArray(r.amb)) r.amb = [null,null,null,null,null]; });
+    d.logsApres.forEach(r => { if (!Array.isArray(r.amb)) r.amb = [null,null,null,null,null]; });
+    return d;
+  }
+
+  function go(view, dossierId){
+    S.view = view; S.dossierId = dossierId || null;
+    if (view === 'form'){
+      S.draft = dossierId && S.dossiers[dossierId]
+        ? normalizeDossier(JSON.parse(JSON.stringify(S.dossiers[dossierId])))
+        : emptyDossier();
+    }
+    window.scrollTo(0,0);
+    render();
+  }
+
+  /* ============================= STATS ============================= */
+  // Plain-text label for a measurement point (used in stats/chart; escaped at render time).
+  function pointLabelRaw(p, i){
+    if (!p) return 'Point ' + (i+1);
+    return p.niveau || p.batiment || ('Point ' + (i+1));
+  }
+  // Mean of the i-th ambient reading across a set of log rows (nulls ignored).
+  function avgAmbientAt(logRows, i){
+    const vals = (logRows||[]).map(r => r.amb && r.amb[i]).filter(v => v!=null && v!=='');
+    if (!vals.length) return null;
+    return vals.reduce((a,b)=>a+Number(b),0) / vals.length;
+  }
+
+  function computeStats(d){
+    const points = d.pointsTemp || [];
+    if (!points.length) return null;
+    const rows = points.map((p,i) => ({
+      label: pointLabelRaw(p, i),
+      avant: avgAmbientAt(d.logsAvant, i),
+      apres: avgAmbientAt(d.logsApres, i),
+    })).filter(r => r.avant!=null && r.apres!=null);
+    if (!rows.length) return null;
+    const av = rows.map(r=>Number(r.avant));
+    const ap = rows.map(r=>Number(r.apres));
+    const ecartAvant = Math.max(...av) - Math.min(...av);
+    const ecartApres = Math.max(...ap) - Math.min(...ap);
+    const reduction = ecartAvant > 0 ? ((ecartAvant - ecartApres) / ecartAvant) * 100 : 0;
+    const gains = rows.map(r => Number(r.apres) - Number(r.avant));
+    const gainMoyen = gains.reduce((a,b)=>a+b,0) / gains.length;
+    const inBand = (v) => v >= 19 && v <= 23;
+    const confortAvant = av.filter(inBand).length / av.length * 100;
+    const confortApres = ap.filter(inBand).length / ap.length * 100;
+    const beneficial = ecartApres < ecartAvant && gainMoyen >= -0.2;
+    return { rows, ecartAvant, ecartApres, reduction, gainMoyen, confortAvant, confortApres, beneficial, n: rows.length };
+  }
+
+  /* ============================= RENDER: SHELL ============================= */
+  function render(){
+    const app = document.getElementById('app');
+    app.innerHTML = shell();
+    bindGlobal();
+    if (S.view === 'dashboard') renderDashboardInto();
+    if (S.view === 'form') renderFormInto();
+    if (S.view === 'report') renderReportInto();
+  }
+
+  function shell(){
+    const list = sortedDossiers();
+    return `
+      <div class="rail">
+        <div class="rail-brand">
+          <div class="mark">
+            <div class="mark-icon">${icon('thermo')}</div>
+            <div>
+              <div class="word">Calorif<br/>Suivi</div>
+            </div>
+          </div>
+          <div class="sub">Suivi calorifugeage</div>
+        </div>
+        <div class="rail-nav">
+          <button data-nav="dashboard" class="${S.view==='dashboard'?'active':''}">${icon('grid')} Tableau de bord</button>
+          <button data-nav="new" class="${S.view==='form' && !S.dossierId?'active':''}">${icon('plus')} Nouveau dossier</button>
+        </div>
+        <div class="rail-list">
+          <div class="rail-list-title">Dossiers récents</div>
+          ${list.length ? list.map(d => `
+            <div class="rail-item ${S.dossierId===d.id?'active':''}" data-open="${d.id}">
+              <div class="rt">${esc(d.residence || 'Sans nom')}</div>
+              <div class="rb"><span class="mono">${esc(d.numero||'—')}</span></div>
+            </div>
+          `).join('') : `<div style="font-size:11.5px;color:var(--ink-muted);padding:8px 12px;">Aucun dossier</div>`}
+        </div>
+        <div class="rail-foot">
+          Maquette CRM — équilibrage &amp; calorifugeage<br/>
+          Prototype interne, données de démonstration incluses.
+        </div>
+      </div>
+      <div class="main" id="main"></div>
+    `;
+  }
+
+  function bindGlobal(){
+    document.querySelectorAll('[data-nav]').forEach(el => {
+      el.addEventListener('click', () => {
+        const v = el.getAttribute('data-nav');
+        if (v === 'dashboard') go('dashboard');
+        if (v === 'new') go('form', null);
+      });
+    });
+    document.querySelectorAll('[data-open]').forEach(el => {
+      el.addEventListener('click', () => go('report', el.getAttribute('data-open')));
+    });
+  }
+
+  /* ============================= DASHBOARD ============================= */
+  function renderDashboardInto(){
+    const main = document.getElementById('main');
+    const list = sortedDossiers();
+    const withStats = list.map(d => ({ d, s: computeStats(d) }));
+    const done = withStats.filter(x => x.s);
+    const avgReduction = done.length ? done.reduce((a,x)=>a+x.s.reduction,0)/done.length : null;
+    const beneficialCount = done.filter(x => x.s.beneficial).length;
+
+    main.innerHTML = `
+      <div class="topbar">
+        <div>
+          <div class="eyebrow">Vue d'ensemble</div>
+          <h1>Tableau de bord</h1>
+        </div>
+        <div class="topbar-actions">
+          <button class="btn btn-primary" id="btn-new">${icon('plus')} Nouveau dossier</button>
+        </div>
+      </div>
+
+      <div class="kpi-row">
+        <div class="kpi">
+          <div class="kv">${list.length}</div>
+          <div class="kl">Dossiers au total</div>
+        </div>
+        <div class="kpi">
+          <div class="kv">${list.filter(d=>d.statut!=='pret').length}</div>
+          <div class="kl">En cours de suivi</div>
+        </div>
+        <div class="kpi">
+          <div class="kv">${avgReduction!=null ? Math.round(avgReduction)+'%' : '—'}</div>
+          <div class="kl">Réduction moyenne de l'écart de température</div>
+        </div>
+        <div class="kpi">
+          <div class="kv">${done.length ? beneficialCount + ' / ' + done.length : '—'}</div>
+          <div class="kl">Rapports jugés bénéfiques</div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <span class="tick-bl"></span><span class="tick-br"></span>
+        <div class="panel-title">Dossiers</div>
+        ${list.length ? `
+        <div class="table-scroll">
+        <table>
+          <thead><tr>
+            <th>N° dossier</th><th>Résidence / client</th><th>Adresse</th>
+            <th>Intervention</th><th>Technicien</th><th>Statut</th><th>Écart réduit</th>
+          </tr></thead>
+          <tbody>
+            ${list.map(d => {
+              const s = computeStats(d);
+              return `
+              <tr class="dossier-row" data-open="${d.id}">
+                <td class="mono cell-strong">${esc(d.numero||'—')}</td>
+                <td>
+                  <div class="cell-strong">${esc(d.residence||'—')}</div>
+                  <div class="cell-muted">${esc(d.client && d.client.nom || '')}</div>
+                </td>
+                <td class="cell-muted">${esc(d.adresse ? [d.adresse.ville].filter(Boolean).join(', ') : '')}</td>
+                <td class="mono cell-muted">${d.dateIntervention ? esc(d.dateIntervention) : '—'}</td>
+                <td class="cell-muted">${esc(userName(d.technicienId)||'—')}</td>
+                <td>${statusPill(d.statut)}</td>
+                <td class="mono">${s ? '−'+fmt1(s.ecartAvant-s.ecartApres)+' °C' : '—'}</td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+        </div>
+        ` : `
+        <div class="empty">
+          ${icon('file')}
+          <div>Aucun dossier pour le moment.</div>
+        </div>
+        `}
+      </div>
+    `;
+    document.querySelectorAll('[data-open]').forEach(el => el.addEventListener('click', () => go('report', el.getAttribute('data-open'))));
+    document.getElementById('btn-new').addEventListener('click', () => go('form', null));
+  }
+
+  function statusPill(statut){
+    const st = STATUS[statut] || STATUS.planifie;
+    return `<span class="pill ${st.cls}"><span class="dot"></span>${st.label}</span>`;
+  }
+
+  /* ============================= FORM ============================= */
+  function renderFormInto(){
+    const main = document.getElementById('main');
+    const d = S.draft;
+    const isEdit = !!(S.dossierId && S.dossiers[S.dossierId]);
+
+    main.innerHTML = `
+      <div class="topbar">
+        <div>
+          <button class="btn btn-ghost btn-sm" id="btn-back" style="margin-bottom:10px;">${icon('back')} Retour</button>
+          <div class="eyebrow">${isEdit ? 'Modifier le dossier' : 'Nouveau dossier'}</div>
+          <h1>${isEdit ? esc(d.residence || 'Dossier sans nom') : 'Prise de rendez-vous'}</h1>
+        </div>
+      </div>
+
+      <form id="dossier-form" class="stack">
+
+        <div class="panel">
+          <span class="tick-bl"></span><span class="tick-br"></span>
+          <div class="section-head"><div class="section-num">1</div><div class="section-title">Identification</div></div>
+          <div class="section-desc">Dossier, résidence ou client, statut du suivi.</div>
+          <div class="grid g3" style="margin-top:16px;">
+            <div class="field"><label>N° de dossier</label>
+              <input class="mono-input" type="text" name="numero" value="${esc(d.numero)}" placeholder="2026-0000000"/></div>
+            <div class="field" style="grid-column:span 2;"><label>Nom de la résidence / du client</label>
+              <input type="text" name="residence" value="${esc(d.residence)}" placeholder="Résidence, copropriété, EHPAD…"/></div>
+          </div>
+          <div class="field" style="margin-top:14px; max-width:280px;">
+            <label>Statut du suivi</label>
+            <select name="statut">
+              ${STATUS_ORDER.map(k => `<option value="${k}" ${d.statut===k?'selected':''}>${STATUS[k].label}</option>`).join('')}
+            </select>
+          </div>
+        </div>
+
+        <div class="panel">
+          <span class="tick-bl"></span><span class="tick-br"></span>
+          <div class="section-head"><div class="section-num">2</div><div class="section-title">Client &amp; coordonnées</div></div>
+          <div class="section-desc">Contact principal pour le dossier.</div>
+          <div class="grid g3" style="margin-top:16px;">
+            <div class="field"><label>Nom du contact</label><input type="text" name="client.nom" value="${esc(d.client.nom)}"/></div>
+            <div class="field"><label>Téléphone</label><input class="mono-input" type="tel" name="client.telephone" value="${esc(d.client.telephone)}"/></div>
+            <div class="field"><label>E-mail</label><input type="email" name="client.email" value="${esc(d.client.email)}"/></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <span class="tick-bl"></span><span class="tick-br"></span>
+          <div class="section-head"><div class="section-num">3</div><div class="section-title">Adresse &amp; localisation</div></div>
+          <div class="section-desc">Adresse postale, coordonnées GPS et référence cadastrale du site.</div>
+          <div class="grid g2" style="margin-top:16px; align-items:start;">
+            <div class="stack" style="gap:14px;">
+              <div class="field"><label>Adresse (rue, n°)</label><input type="text" name="adresse.rue" value="${esc(d.adresse.rue)}"/></div>
+              <div class="grid g2">
+                <div class="field ac-wrap"><label>Code postal</label>
+                  <input class="mono-input" type="text" name="adresse.cp" id="f-cp" value="${esc(d.adresse.cp)}" autocomplete="off"/>
+                  <div class="ac-list" id="ac-cp" hidden></div>
+                </div>
+                <div class="field ac-wrap"><label>Ville</label>
+                  <input type="text" name="adresse.ville" id="f-ville" value="${esc(d.adresse.ville)}" autocomplete="off"/>
+                  <div class="ac-list" id="ac-ville" hidden></div>
+                </div>
+              </div>
+              <div class="grid g2">
+                <div class="field"><label>Latitude</label><input class="mono-input" type="text" name="lat" value="${esc(d.lat)}" placeholder="48.1147"/></div>
+                <div class="field"><label>Longitude</label><input class="mono-input" type="text" name="lng" value="${esc(d.lng)}" placeholder="-1.6794"/></div>
+              </div>
+              <div class="field"><label>Référence cadastrale <span class="hint">section / parcelle</span></label>
+                <input class="mono-input" type="text" name="refCadastrale" value="${esc(d.refCadastrale)}" placeholder="035/CR/0248"/></div>
+            </div>
+            <div id="geo-preview"></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <span class="tick-bl"></span><span class="tick-br"></span>
+          <div class="section-head"><div class="section-num">4</div><div class="section-title">Rendez-vous d'intervention</div></div>
+          <div class="section-desc">Technicien assigné, prise de mesure sur site et contact du gardien.</div>
+          <div class="field" style="margin-top:16px; max-width:340px;">
+            <label>Technicien assigné <span class="hint">annuaire CRM</span></label>
+            <select name="technicienId">
+              <option value="">— Non assigné —</option>
+              ${techniciens().map(u => `<option value="${u.id}" ${d.technicienId===u.id?'selected':''}>${esc(u.nom)}</option>`).join('')}
+            </select>
+          </div>
+          <div class="grid g3" style="margin-top:14px;">
+            <div class="field"><label>Date d'intervention</label><input type="date" name="dateIntervention" value="${esc(d.dateIntervention)}"/></div>
+            <div class="field"><label>Gardien — nom</label><input type="text" name="gardien.nom" value="${esc(d.gardien.nom)}"/></div>
+            <div class="field"><label>Gardien — téléphone</label><input class="mono-input" type="tel" name="gardien.telephone" value="${esc(d.gardien.telephone)}"/></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <span class="tick-bl"></span><span class="tick-br"></span>
+          <div class="section-head"><div class="section-num">5</div><div class="section-title">Type de logement</div></div>
+          <div class="section-desc">Caractéristiques du bâtiment et conditions relevées lors de l'intervention.</div>
+          <div class="grid g3" style="margin-top:16px;">
+            <div class="field"><label>Nombre de logement</label>
+              <input class="mono-input" type="number" name="typeLogement.nbLogements" value="${esc(d.typeLogement.nbLogements)}"/></div>
+            <div class="field"><label>Type Gaz / Fioul</label>
+              <select name="typeLogement.typeEnergie">
+                ${['CPCU','Gaz','Fioul','Électrique','Réseau de chaleur','Autre'].map(v => `<option value="${v}" ${d.typeLogement.typeEnergie===v?'selected':''}>${v}</option>`).join('')}
+              </select></div>
+            <div class="field"><label>Surface en M2</label>
+              <input class="mono-input" type="number" name="typeLogement.surfaceM2" value="${esc(d.typeLogement.surfaceM2)}"/></div>
+            <div class="field"><label>Nombre de sous-stations</label>
+              <input class="mono-input" type="number" name="typeLogement.nbSousStations" value="${esc(d.typeLogement.nbSousStations)}"/></div>
+            <div class="field"><label>Température extérieure <span class="hint">°C, relevée sur site</span></label>
+              <input class="mono-input" type="number" step="0.1" name="typeLogement.tempExterieure" value="${esc(d.typeLogement.tempExterieure)}"/></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <span class="tick-bl"></span><span class="tick-br"></span>
+          <div class="section-head"><div class="section-num">6</div><div class="section-title">Relevé d'équilibrage des vannes</div></div>
+          <div class="section-desc">Repérage, réglages et débits mesurés avant / après équilibrage, par vanne.</div>
+          <div class="table-scroll" style="margin-top:16px;">
+            <table class="vanne-table" id="vanne-table">
+              <thead>
+                <tr>
+                  <th rowspan="2">Repérage<br/>vanne</th>
+                  <th rowspan="2">Sonde<br/>d'ambiance</th>
+                  <th rowspan="2">Marque</th>
+                  <th rowspan="2">Type</th>
+                  <th rowspan="2">DN</th>
+                  <th colspan="5" class="grp grp-avant">Mesure avant</th>
+                  <th rowspan="2">Débit théo.<br/>visé (L/h)</th>
+                  <th colspan="5" class="grp grp-apres">Mesure après</th>
+                  <th rowspan="2"></th>
+                </tr>
+                <tr>
+                  <th>Débit<br/>L/h</th><th>Tours</th><th>T° Dép.</th><th>T° Ret.</th><th>Δ T</th>
+                  <th>Débit<br/>L/h</th><th>Tours</th><th>T° Dép.</th><th>T° Ret.</th><th>Δ T</th>
+                </tr>
+              </thead>
+              <tbody id="vanne-body"></tbody>
+            </table>
+          </div>
+          <button type="button" class="btn btn-sm btn-ghost" id="btn-add-vanne" style="margin-top:10px;">${icon('plus')} Ajouter une vanne</button>
+        </div>
+
+        <div class="panel">
+          <span class="tick-bl"></span><span class="tick-br"></span>
+          <div class="section-head"><div class="section-num">7</div><div class="section-title">Points de mesure — température ambiante</div></div>
+          <div class="section-desc">Bâtiment, niveau, lieu et exposition de chaque sonde (5 points maximum — l'ordre de cette liste correspond aux colonnes « Ambiante » des relevés ci-dessous).</div>
+          <div class="table-scroll" style="margin-top:16px;">
+            <table class="points-table" id="points-table">
+              <thead><tr><th>Bâtiment</th><th>Niveau</th><th>Lieu</th><th>Exposition</th><th>Relevé T° (°C)</th><th></th></tr></thead>
+              <tbody id="points-body"></tbody>
+            </table>
+          </div>
+          <button type="button" class="btn btn-sm btn-ghost" id="btn-add-point" style="margin-top:10px;">${icon('plus')} Ajouter un point</button>
+        </div>
+
+        <div class="panel log-panel-avant">
+          <span class="tick-bl"></span><span class="tick-br"></span>
+          <div class="section-head"><div class="section-num">8</div><div class="section-title">Températures — avant équilibrage</div></div>
+          <div class="section-desc">Historique horodaté des relevés d'ambiance avant intervention.</div>
+          <div class="table-scroll" style="margin-top:16px;">
+            <table class="log-table" id="log-table-avant"></table>
+          </div>
+          <button type="button" class="btn btn-sm btn-ghost" data-add-log="avant" style="margin-top:10px;">${icon('plus')} Ajouter un relevé</button>
+        </div>
+
+        <div class="panel log-panel-apres">
+          <span class="tick-bl"></span><span class="tick-br"></span>
+          <div class="section-head"><div class="section-num">9</div><div class="section-title">Températures — après équilibrage</div></div>
+          <div class="section-desc">Historique horodaté des relevés d'ambiance après intervention.</div>
+          <div class="table-scroll" style="margin-top:16px;">
+            <table class="log-table" id="log-table-apres"></table>
+          </div>
+          <button type="button" class="btn btn-sm btn-ghost" data-add-log="apres" style="margin-top:10px;">${icon('plus')} Ajouter un relevé</button>
+        </div>
+
+        <div class="panel">
+          <span class="tick-bl"></span><span class="tick-br"></span>
+          <div class="section-head"><div class="section-num">10</div><div class="section-title">Photos</div></div>
+          <div class="section-desc">Bâtiment, chaufferie et thermomètre extérieur.</div>
+          <div class="photo-grid" style="margin-top:16px;">
+            ${photoSlot('batiment', 'Photo du bâtiment', d.photos.batiment)}
+            ${photoSlot('chaufferie', 'Photo de la chaufferie', d.photos.chaufferie)}
+            ${photoSlot('temperature', 'Température extérieure', d.photos.temperature)}
+          </div>
+        </div>
+
+        <div class="panel">
+          <span class="tick-bl"></span><span class="tick-br"></span>
+          <div class="section-head"><div class="section-num">11</div><div class="section-title">Notes</div></div>
+          <div class="field" style="margin-top:14px;">
+            <textarea name="notes" placeholder="Observations, réseau de chauffage, travaux réalisés…">${esc(d.notes)}</textarea>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          ${isEdit ? `<button type="button" class="btn btn-danger" id="btn-delete">${icon('trash')} Supprimer</button>` : ''}
+          <button type="button" class="btn" id="btn-cancel">Annuler</button>
+          <button type="submit" class="btn btn-primary">${icon('check')} Enregistrer le dossier</button>
+        </div>
+      </form>
+    `;
+
+    renderVanneRows();
+    renderPointsRows();
+    renderLogTable('avant');
+    renderLogTable('apres');
+    renderGeoPreview();
+    attachAddressAutocomplete();
+
+    document.getElementById('btn-back').addEventListener('click', () => go(isEdit ? 'report' : 'dashboard', isEdit ? S.dossierId : null));
+    document.getElementById('btn-cancel').addEventListener('click', () => go(isEdit ? 'report' : 'dashboard', isEdit ? S.dossierId : null));
+    document.getElementById('btn-add-vanne').addEventListener('click', () => { d.vannes.push(emptyVanne()); renderVanneRows(); });
+    document.getElementById('btn-add-point').addEventListener('click', () => {
+      if (d.pointsTemp.length >= 5){ toast('5 points maximum.'); return; }
+      d.pointsTemp.push(emptyPointTemp()); renderPointsRows(); renderLogTable('avant'); renderLogTable('apres');
+    });
+    main.querySelectorAll('[data-add-log]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const key = btn.getAttribute('data-add-log');
+        (key==='avant' ? d.logsAvant : d.logsApres).push(emptyLogRow());
+        renderLogTable(key);
+      });
+    });
+    if (isEdit){
+      document.getElementById('btn-delete').addEventListener('click', () => {
+        if (confirm('Supprimer définitivement ce dossier ?')){ deleteDossier(S.dossierId); go('dashboard'); toast('Dossier supprimé.'); }
+      });
+    }
+
+    ['lat','lng','refCadastrale'].forEach(name => {
+      const input = main.querySelector(`[name="${name}"]`);
+      if (input) input.addEventListener('input', () => { d[name] = input.value; renderGeoPreview(); });
+    });
+
+    main.querySelectorAll('.photo-slot input[type=file]').forEach(inp => {
+      inp.addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        try{
+          const dataUrl = await compressImage(file);
+          d.photos[inp.dataset.field] = dataUrl;
+          renderFormInto();
+        }catch(err){ toast('Impossible de lire cette image.'); }
+      });
+    });
+    main.querySelectorAll('.photo-slot .cap button').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation(); e.preventDefault();
+        d.photos[btn.dataset.field] = '';
+        renderFormInto();
+      });
+    });
+
+    document.getElementById('dossier-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      applyFormValues();
+      await saveDossier(d);
+      toast('Dossier enregistré.');
+      go('report', d.id);
+    });
+  }
+
+  function photoSlot(field, label, dataUrl){
+    if (dataUrl){
+      return `
+      <label class="photo-slot" style="cursor:default;">
+        <img src="${dataUrl}" alt="${esc(label)}"/>
+        <div class="cap"><span>${esc(label)}</span><button type="button" data-field="${field}">Retirer</button></div>
+        <input type="file" accept="image/*" data-field="${field}"/>
+      </label>`;
+    }
+    return `
+    <label class="photo-slot">
+      ${icon('camera')}
+      <div class="pl">${esc(label)}</div>
+      <div class="ps">Cliquer pour importer</div>
+      <input type="file" accept="image/*" data-field="${field}"/>
+    </label>`;
+  }
+
+  async function compressImage(file, maxDim, quality){
+    maxDim = maxDim || 520; quality = quality || 0.55;
+    const dataUrl = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = e => resolve(e.target.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+    const img = await new Promise((resolve, reject) => {
+      const im = new Image();
+      im.onload = () => resolve(im);
+      im.onerror = reject;
+      im.src = dataUrl;
+    });
+    let w = img.width, h = img.height;
+    if (w > h && w > maxDim){ h = Math.round(h * maxDim / w); w = maxDim; }
+    else if (h >= w && h > maxDim){ w = Math.round(w * maxDim / h); h = maxDim; }
+    const canvas = document.createElement('canvas');
+    canvas.width = w; canvas.height = h;
+    canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+    return canvas.toDataURL('image/jpeg', quality);
+  }
+
+  function deltaT(depart, retour){
+    if (depart==null || retour==null || depart==='' || retour==='') return null;
+    return Number(depart) - Number(retour);
+  }
+  function deltaCellHtml(depart, retour){
+    const dv = deltaT(depart, retour);
+    if (dv==null) return `<span class="mono" style="color:var(--ink-muted);">—</span>`;
+    const color = dv >= 0 ? 'var(--good)' : 'var(--critical)';
+    return `<span class="mono" style="font-weight:600; color:${color};">${dv>0?'+':''}${fmt1(dv)}</span>`;
+  }
+
+  function renderVanneRows(){
+    const d = S.draft;
+    const body = document.getElementById('vanne-body');
+    if (!body) return;
+    const num = v => v==null ? '' : v;
+    body.innerHTML = d.vannes.map((v, i) => `
+      <tr data-vrow="${i}">
+        <td><input type="text" data-k="reperage" value="${esc(v.reperage)}" placeholder="T1" style="width:64px;"/></td>
+        <td>
+          <select data-k="sonde" style="width:78px;">
+            <option value="oui" ${v.sonde==='oui'?'selected':''}>Oui</option>
+            <option value="non" ${v.sonde==='non'?'selected':''}>Non</option>
+          </select>
+        </td>
+        <td><input type="text" data-k="marque" value="${esc(v.marque)}" style="width:88px;"/></td>
+        <td><input type="text" data-k="type" value="${esc(v.type)}" style="width:64px;"/></td>
+        <td><input class="mono-input" type="text" data-k="dn" value="${esc(v.dn)}" style="width:52px;"/></td>
+        <td><input class="mono-input" type="number" step="0.1" data-k="avant.debit" value="${num(v.avant.debit)}" style="width:70px;"/></td>
+        <td><input class="mono-input" type="number" step="1" data-k="avant.tours" value="${num(v.avant.tours)}" style="width:60px;"/></td>
+        <td><input class="mono-input" type="number" step="0.1" data-k="avant.tDepart" value="${num(v.avant.tDepart)}" style="width:64px;"/></td>
+        <td><input class="mono-input" type="number" step="0.1" data-k="avant.tRetour" value="${num(v.avant.tRetour)}" style="width:64px;"/></td>
+        <td class="delta-cell" data-delta="avant">${deltaCellHtml(v.avant.tDepart, v.avant.tRetour)}</td>
+        <td><input class="mono-input" type="number" step="0.1" data-k="debitTheoriqueVise" value="${num(v.debitTheoriqueVise)}" style="width:78px;"/></td>
+        <td><input class="mono-input" type="number" step="0.1" data-k="apres.debit" value="${num(v.apres.debit)}" style="width:70px;"/></td>
+        <td><input class="mono-input" type="number" step="1" data-k="apres.tours" value="${num(v.apres.tours)}" style="width:60px;"/></td>
+        <td><input class="mono-input" type="number" step="0.1" data-k="apres.tDepart" value="${num(v.apres.tDepart)}" style="width:64px;"/></td>
+        <td><input class="mono-input" type="number" step="0.1" data-k="apres.tRetour" value="${num(v.apres.tRetour)}" style="width:64px;"/></td>
+        <td class="delta-cell" data-delta="apres">${deltaCellHtml(v.apres.tDepart, v.apres.tRetour)}</td>
+        <td><button type="button" class="rm-btn" data-rmv="${i}">${icon('x')}</button></td>
+      </tr>
+    `).join('');
+
+    body.querySelectorAll('[data-k]').forEach(inp => {
+      inp.addEventListener('input', () => {
+        const row = inp.closest('tr');
+        const i = Number(row.getAttribute('data-vrow'));
+        const path = inp.getAttribute('data-k').split('.');
+        const val = inp.tagName === 'SELECT' ? inp.value
+          : (inp.type === 'number' ? (inp.value===''? null : Number(inp.value)) : inp.value);
+        if (path.length === 1) d.vannes[i][path[0]] = val;
+        else d.vannes[i][path[0]][path[1]] = val;
+        // live-update the affected delta cell without a full re-render (keeps focus)
+        if (path[1] === 'tDepart' || path[1] === 'tRetour'){
+          const group = path[0]; // 'avant' | 'apres'
+          const cell = row.querySelector(`[data-delta="${group}"]`);
+          if (cell) cell.innerHTML = deltaCellHtml(d.vannes[i][group].tDepart, d.vannes[i][group].tRetour);
+        }
+      });
+    });
+    body.querySelectorAll('[data-rmv]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        d.vannes.splice(Number(btn.getAttribute('data-rmv')), 1);
+        renderVanneRows();
+      });
+    });
+  }
+
+  const LIEU_OPTS = ['Chambre','Bureau','Couloir','Local technique','Autre'];
+  const EXPOSITION_OPTS = ['Nord','Sud','Est','Ouest'];
+
+  function renderPointsRows(){
+    const d = S.draft;
+    const body = document.getElementById('points-body');
+    if (!body) return;
+    body.innerHTML = d.pointsTemp.map((p,i) => `
+      <tr data-prow="${i}">
+        <td><input type="text" data-k="batiment" value="${esc(p.batiment)}" placeholder="Bâtiment A" style="width:112px;"/></td>
+        <td><input type="text" data-k="niveau" value="${esc(p.niveau)}" placeholder="1er étage" style="width:100px;"/></td>
+        <td><select data-k="lieu" style="width:132px;">${LIEU_OPTS.map(o=>`<option value="${o}" ${p.lieu===o?'selected':''}>${o}</option>`).join('')}</select></td>
+        <td><select data-k="exposition" style="width:92px;">${EXPOSITION_OPTS.map(o=>`<option value="${o}" ${p.exposition===o?'selected':''}>${o}</option>`).join('')}</select></td>
+        <td><input class="mono-input" type="number" step="0.1" data-k="releve" value="${p.releve==null?'':p.releve}" style="width:82px;"/></td>
+        <td><button type="button" class="rm-btn" data-rmp="${i}">${icon('x')}</button></td>
+      </tr>
+    `).join('');
+    body.querySelectorAll('[data-k]').forEach(inp => {
+      inp.addEventListener('input', () => {
+        const i = Number(inp.closest('tr').getAttribute('data-prow'));
+        const k = inp.getAttribute('data-k');
+        d.pointsTemp[i][k] = (k==='releve') ? (inp.value===''?null:Number(inp.value)) : inp.value;
+      });
+      if (inp.getAttribute('data-k') === 'batiment' || inp.getAttribute('data-k') === 'niveau'){
+        inp.addEventListener('change', () => { renderLogTable('avant'); renderLogTable('apres'); });
+      }
+    });
+    body.querySelectorAll('[data-rmp]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        d.pointsTemp.splice(Number(btn.getAttribute('data-rmp')), 1);
+        renderPointsRows(); renderLogTable('avant'); renderLogTable('apres');
+      });
+    });
+  }
+
+  function pointLabel(d, i){
+    return esc(pointLabelRaw(d.pointsTemp[i], i));
+  }
+
+  function renderLogTable(key){
+    const d = S.draft;
+    const table = document.getElementById('log-table-' + key);
+    if (!table) return;
+    const rows = key === 'avant' ? d.logsAvant : d.logsApres;
+    const head = `
+      <thead>
+        <tr>
+          <th rowspan="2">Date</th><th rowspan="2">Heure</th><th rowspan="2">T° Ext</th>
+          <th colspan="5" class="grp-amb">Températures ambiantes</th>
+          <th rowspan="2">Écart<br/>max</th><th rowspan="2"></th>
+        </tr>
+        <tr>
+          ${[0,1,2,3,4].map(i => `<th>${pointLabel(d,i)}</th>`).join('')}
+        </tr>
+      </thead>`;
+    const body = rows.map((r,i) => `
+      <tr data-lrow="${i}">
+        <td><input type="text" data-k="date" value="${esc(r.date)}" placeholder="jj/mm/aaaa" style="width:88px;"/></td>
+        <td><input type="text" data-k="heure" value="${esc(r.heure)}" placeholder="--:--:--" style="width:70px;"/></td>
+        <td><input class="mono-input amb-input" type="number" step="0.1" data-k="tExt" value="${r.tExt==null?'':r.tExt}"/></td>
+        ${[0,1,2,3,4].map(ai => `<td><input class="mono-input amb-input" type="number" step="0.1" data-k="amb.${ai}" value="${r.amb[ai]==null?'':r.amb[ai]}"/></td>`).join('')}
+        <td><input class="mono-input amb-input" type="number" step="0.1" data-k="ecartMax" value="${r.ecartMax==null?'':r.ecartMax}"/></td>
+        <td><button type="button" class="rm-btn" data-rml="${i}">${icon('x')}</button></td>
+      </tr>
+    `).join('');
+    table.innerHTML = head + `<tbody>${body || `<tr><td colspan="10" style="color:var(--ink-muted); text-align:center; padding:16px;">Aucun relevé pour le moment.</td></tr>`}</tbody>`;
+
+    table.querySelectorAll('[data-k]').forEach(inp => {
+      inp.addEventListener('input', () => {
+        const i = Number(inp.closest('tr').getAttribute('data-lrow'));
+        const path = inp.getAttribute('data-k').split('.');
+        const val = inp.type === 'number' ? (inp.value===''? null : Number(inp.value)) : inp.value;
+        if (path.length === 1) rows[i][path[0]] = val;
+        else rows[i].amb[Number(path[1])] = val;
+      });
+    });
+    table.querySelectorAll('[data-rml]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        rows.splice(Number(btn.getAttribute('data-rml')), 1);
+        renderLogTable(key);
+      });
+    });
+  }
+
+  function applyFormValues(){
+    const form = document.getElementById('dossier-form');
+    const d = S.draft;
+    const get = n => form.querySelector(`[name="${n}"]`);
+    d.numero = get('numero').value.trim();
+    d.residence = get('residence').value.trim();
+    d.statut = get('statut').value;
+    d.client.nom = get('client.nom').value.trim();
+    d.client.telephone = get('client.telephone').value.trim();
+    d.client.email = get('client.email').value.trim();
+    d.adresse.rue = get('adresse.rue').value.trim();
+    d.adresse.cp = get('adresse.cp').value.trim();
+    d.adresse.ville = get('adresse.ville').value.trim();
+    d.lat = get('lat').value.trim();
+    d.lng = get('lng').value.trim();
+    d.refCadastrale = get('refCadastrale').value.trim();
+    d.technicienId = get('technicienId').value;
+    d.dateIntervention = get('dateIntervention').value;
+    d.gardien.nom = get('gardien.nom').value.trim();
+    d.gardien.telephone = get('gardien.telephone').value.trim();
+    d.typeLogement.nbLogements = get('typeLogement.nbLogements').value.trim();
+    d.typeLogement.typeEnergie = get('typeLogement.typeEnergie').value;
+    d.typeLogement.surfaceM2 = get('typeLogement.surfaceM2').value.trim();
+    d.typeLogement.nbSousStations = get('typeLogement.nbSousStations').value.trim();
+    d.typeLogement.tempExterieure = get('typeLogement.tempExterieure').value.trim();
+    d.notes = get('notes').value;
+    if (!d.numero) d.numero = 'S/N-' + d.id.slice(-6);
+  }
+
+  /* ---- Geo / cadastre schematic preview (illustrative, not a real map) ---- */
+  function renderGeoPreview(){
+    const el = document.getElementById('geo-preview');
+    if (!el) return;
+    const d = S.draft;
+    el.innerHTML = cadastreMarkup(d);
+  }
+
+  // Official-source links for the cadastral panel. A published maquette can't
+  // call cadastre.gouv.fr / apicarto.ign.fr from client-side JS (cross-origin
+  // fetch is sandboxed), so instead of a live fetch we open the real
+  // government viewers in a new tab — plain navigation, not a network call,
+  // and it lands on the authoritative parcel data rather than an imitation of it.
+  function officialCadastreLinks(d){
+    const lat = parseFloat(d.lat), lng = parseFloat(d.lng);
+    const hasCoords = isFinite(lat) && isFinite(lng);
+    const geoportailUrl = hasCoords
+      ? `https://www.geoportail.gouv.fr/carte?c=${lng.toFixed(6)},${lat.toFixed(6)}&z=19&l0=CADASTRALPARCELS.PARCELLAIRE_EXPRESS::GEOPORTAIL:OGC:WMTS(1)&permalink=yes`
+      : null;
+    const cadastreUrl = 'https://www.cadastre.gouv.fr/';
+    return `
+    <div class="cadastre-links">
+      ${geoportailUrl ? `<a class="btn btn-sm" href="${geoportailUrl}" target="_blank" rel="noopener">${icon('ext')} Voir sur Géoportail</a>` : `<span class="btn btn-sm" style="opacity:.5; pointer-events:none;">${icon('ext')} Voir sur Géoportail</span>`}
+      <a class="btn btn-sm btn-ghost" href="${cadastreUrl}" target="_blank" rel="noopener">${icon('ext')} cadastre.gouv.fr</a>
+    </div>
+    ${!hasCoords ? `<div class="geo-caption" style="margin-top:6px;">Renseignez la latitude/longitude pour ouvrir directement la parcelle sur Géoportail.</div>` : ''}`;
+  }
+
+  function cadastreMarkup(d){
+    return `
+    <div class="panel" style="padding:14px;">
+      <div class="panel-title">Plan cadastral <span class="hint" style="text-transform:none; font-weight:400;">aperçu schématique</span></div>
+      ${cadastreSvg(d.refCadastrale || d.id)}
+      <div class="geo-caption">Repérage indicatif généré depuis la référence cadastrale déclarée — le tracé n'est pas la géométrie officielle. Utilisez les liens ci-dessous pour consulter le plan cadastral réel.</div>
+      ${officialCadastreLinks(d)}
+    </div>`;
+  }
+
+
+  function cadastreSvg(seedStr){
+    const h = seedHash(seedStr || 'x');
+    // Deterministic simple (non self-intersecting) parcel: points placed at
+    // strictly increasing angles around the centroid, radius jittered per seed.
+    const cx=100, cy=72, baseR=42, sides=6;
+    const pts = [];
+    for (let i=0;i<sides;i++){
+      const jitter = ((h >> (i*3)) % 100) / 100;           // 0..1
+      const angle = (i/sides) * Math.PI*2 + (((h>>i)%10)/10 - 0.5) * (Math.PI*2/sides)*0.5;
+      const r = baseR * (0.72 + jitter*0.4);
+      pts.push([cx + Math.cos(angle)*r, cy + Math.sin(angle)*r*0.86]);
+    }
+    const poly = pts.map(p => p[0].toFixed(1)+','+p[1].toFixed(1)).join(' ');
+    let grid = '';
+    for (let x=0; x<=200; x+=20) grid += `<line x1="${x}" y1="0" x2="${x}" y2="152" />`;
+    for (let y=0; y<=152; y+=20) grid += `<line x1="0" y1="${y}" x2="200" y2="${y}" />`;
+    return `
+    <svg viewBox="0 0 200 152" style="width:100%; height:auto; border-radius:8px; background:var(--surface-2); border:1px solid var(--line);">
+      <g stroke="var(--line)" stroke-width="1">${grid}</g>
+      <polygon points="${poly}" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="1.6" stroke-linejoin="round"/>
+      <circle cx="${cx}" cy="${cy}" r="2" fill="var(--accent)"/>
+      <g transform="translate(172,18)" stroke="var(--ink-muted)" fill="var(--ink-muted)">
+        <line x1="0" y1="10" x2="0" y2="-8" stroke-width="1.4"/>
+        <polygon points="0,-12 -3.5,-5 3.5,-5" stroke="none"/>
+        <text x="0" y="20" font-size="8" text-anchor="middle" fill="var(--ink-muted)" stroke="none" font-family="var(--font-mono)">N</text>
+      </g>
+      <g font-family="var(--font-mono)" font-size="8" fill="var(--ink-muted)" stroke="none">
+        <line x1="14" y1="136" x2="54" y2="136" stroke="var(--ink-muted)" stroke-width="1"/>
+        <text x="14" y="147">≈ 50 m</text>
+      </g>
+    </svg>`;
+  }
+
+
+  /* ============================= REPORT ============================= */
+  function renderReportInto(){
+    const main = document.getElementById('main');
+    const d = S.dossiers[S.dossierId];
+    if (!d){ go('dashboard'); return; }
+    normalizeDossier(d);
+    const s = computeStats(d);
+
+    main.innerHTML = `
+      <div class="topbar">
+        <div>
+          <button class="btn btn-ghost btn-sm" id="btn-back" style="margin-bottom:10px;">${icon('back')} Tableau de bord</button>
+          <div class="eyebrow">Rapport synoptique · ${esc(d.numero)}</div>
+          <h1>${esc(d.residence || 'Dossier sans nom')}</h1>
+        </div>
+        <div class="topbar-actions">
+          <button class="btn" id="btn-edit">Modifier</button>
+          <button class="btn btn-primary" id="btn-export">${icon('dl')} Exporter le rapport</button>
+        </div>
+      </div>
+
+      <div class="panel" style="margin-bottom:20px;">
+        <span class="tick-bl"></span><span class="tick-br"></span>
+        <div class="report-header">
+          <div>
+            <div class="rd"><b>${esc(d.client.nom || d.residence || '—')}</b></div>
+            <div class="rd">${esc([d.adresse.rue, [d.adresse.cp,d.adresse.ville].filter(Boolean).join(' ')].filter(Boolean).join(' — '))}</div>
+            <div class="rd">Intervention du <span class="mono">${d.dateIntervention?esc(d.dateIntervention):'—'}</span> · Technicien : ${esc(userName(d.technicienId)||'non assigné')} · Gardien : ${esc(d.gardien.nom||'—')} ${d.gardien.telephone?('· '+esc(d.gardien.telephone)):''}</div>
+          </div>
+          <div class="verdict">
+            ${statusPill(d.statut)}
+            ${s ? (s.beneficial
+                ? `<span class="badge badge-good">${icon('check')} Calorifugeage bénéfique</span>`
+                : `<span class="badge badge-warn">${icon('warn')} Résultats à confirmer</span>`)
+              : ''}
+          </div>
+        </div>
+
+        <div class="mini-row" style="margin-bottom:22px;">
+          <div class="mini"><div class="mv">${d.typeLogement.nbLogements || '—'}</div><div class="ml">Nombre de logement</div></div>
+          <div class="mini"><div class="mv">${esc(d.typeLogement.typeEnergie || '—')}</div><div class="ml">Type Gaz / Fioul</div></div>
+          <div class="mini"><div class="mv">${d.typeLogement.surfaceM2 ? esc(d.typeLogement.surfaceM2) + ' m²' : '—'}</div><div class="ml">Surface</div></div>
+          <div class="mini"><div class="mv">${d.typeLogement.nbSousStations || '—'}</div><div class="ml">Sous-stations</div></div>
+          <div class="mini"><div class="mv">${d.typeLogement.tempExterieure !== '' && d.typeLogement.tempExterieure != null ? esc(d.typeLogement.tempExterieure) + '°C' : '—'}</div><div class="ml">Température extérieure</div></div>
+        </div>
+
+        ${s ? `
+        <div class="kpi-row" style="margin-bottom:22px;">
+          <div class="kpi"><div class="kv">${fmt1(s.ecartAvant)}<span style="font-size:14px;">°C</span></div><div class="kl">Écart de température — avant</div></div>
+          <div class="kpi"><div class="kv">${fmt1(s.ecartApres)}<span style="font-size:14px;">°C</span></div><div class="kl">Écart de température — après</div></div>
+          <div class="kpi"><div class="kv" style="color:${s.reduction>=0?'var(--good)':'var(--critical)'};">${s.reduction>=0?'−':'+'}${fmt1(Math.abs(s.reduction))}<span style="font-size:14px;">%</span></div><div class="kl">Réduction de l'écart entre points</div></div>
+          <div class="kpi"><div class="kv" style="color:${s.gainMoyen>=0?'var(--good)':'var(--critical)'};">${s.gainMoyen>=0?'+':''}${fmt1(s.gainMoyen)}<span style="font-size:14px;">°C</span></div><div class="kl">Gain moyen de température</div></div>
+        </div>
+
+        <div class="panel-title">Températures par point de mesure</div>
+        <div class="chart-legend">
+          <span class="li"><span class="sw" style="background:var(--cold);"></span>Avant calorifugeage</span>
+          <span class="li"><span class="sw" style="background:var(--warm);"></span>Après calorifugeage</span>
+        </div>
+        <div class="chart-wrap" id="chart-holder"></div>
+        <div class="chart-toggle"><button id="btn-toggle-table">${S.chartTable[d.id] ? 'Afficher le graphique' : 'Afficher le tableau des valeurs'}</button></div>
+        ` : `
+        <div class="empty">
+          ${icon('gauge')}
+          <div>Renseignez au moins un point de mesure ainsi qu'un relevé avant et un relevé après équilibrage pour générer le rapport synoptique.</div>
+        </div>
+        `}
+      </div>
+
+      <div class="grid g2" style="margin-bottom:20px;">
+        <div class="panel">
+          <span class="tick-bl"></span><span class="tick-br"></span>
+          <div class="panel-title">Localisation &amp; cadastre</div>
+          ${cadastreMarkup(d)}
+        </div>
+        <div class="panel">
+          <span class="tick-bl"></span><span class="tick-br"></span>
+          <div class="panel-title">Températures moyennes par point</div>
+          ${s ? `
+          <div class="table-scroll">
+            <table>
+              <thead><tr><th>Point</th><th>Avant</th><th>Après</th><th>Δ</th></tr></thead>
+              <tbody>
+                ${s.rows.map(r => `
+                  <tr>
+                    <td>${esc(r.label||'—')}</td>
+                    <td class="mono">${fmt1(r.avant)}°C</td>
+                    <td class="mono">${fmt1(r.apres)}°C</td>
+                    <td class="mono" style="color:${(r.apres-r.avant)>=0?'var(--good)':'var(--critical)'};">
+                      ${(r.apres-r.avant)>=0?'+':''}${fmt1(r.apres-r.avant)}°C
+                    </td>
+                  </tr>`).join('')}
+              </tbody>
+            </table>
+          </div>
+          <div class="geo-caption" style="margin-top:10px;">Moyennes calculées à partir des campagnes de relevé avant / après équilibrage (section « Températures » de la fiche dossier).</div>
+          ` : `<div class="geo-caption">Aucune moyenne disponible — complétez les points de mesure et au moins un relevé avant / après.</div>`}
+        </div>
+      </div>
+
+      ${(d.vannes||[]).length ? `
+      <div class="panel" style="margin-bottom:20px;">
+        <span class="tick-bl"></span><span class="tick-br"></span>
+        <div class="panel-title">Équilibrage hydraulique — relevé par vanne</div>
+        <div class="table-scroll">
+          <table class="report-vanne-table" style="min-width:1080px;">
+            <thead>
+              <tr>
+                <th rowspan="2">Vanne</th><th rowspan="2">Sonde</th><th rowspan="2">Marque</th><th rowspan="2">Type</th><th rowspan="2">DN</th>
+                <th colspan="5" class="grp grp-avant">Mesure avant</th>
+                <th rowspan="2">Débit théo.<br/>visé</th>
+                <th colspan="5" class="grp grp-apres">Mesure après</th>
+              </tr>
+              <tr>
+                <th>Débit L/h</th><th>Tours</th><th>T° Dép.</th><th>T° Ret.</th><th>Δ T</th>
+                <th>Débit L/h</th><th>Tours</th><th>T° Dép.</th><th>T° Ret.</th><th>Δ T</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${d.vannes.map(v => `
+                <tr>
+                  <td class="cell-strong mono">${esc(v.reperage||'—')}</td>
+                  <td>${v.sonde==='oui'?'Oui':'Non'}</td>
+                  <td>${esc(v.marque||'—')}</td>
+                  <td>${esc(v.type||'—')}</td>
+                  <td class="mono">${esc(v.dn||'—')}</td>
+                  <td class="mono">${v.avant.debit!=null?fmt1(v.avant.debit):'—'}</td>
+                  <td class="mono">${v.avant.tours!=null?v.avant.tours:'—'}</td>
+                  <td class="mono">${v.avant.tDepart!=null?fmt1(v.avant.tDepart)+'°':'—'}</td>
+                  <td class="mono">${v.avant.tRetour!=null?fmt1(v.avant.tRetour)+'°':'—'}</td>
+                  <td style="text-align:center;">${deltaCellHtml(v.avant.tDepart, v.avant.tRetour)}</td>
+                  <td class="mono">${v.debitTheoriqueVise!=null?fmt1(v.debitTheoriqueVise):'—'}</td>
+                  <td class="mono">${v.apres.debit!=null?fmt1(v.apres.debit):'—'}</td>
+                  <td class="mono">${v.apres.tours!=null?v.apres.tours:'—'}</td>
+                  <td class="mono">${v.apres.tDepart!=null?fmt1(v.apres.tDepart)+'°':'—'}</td>
+                  <td class="mono">${v.apres.tRetour!=null?fmt1(v.apres.tRetour)+'°':'—'}</td>
+                  <td style="text-align:center;">${deltaCellHtml(v.apres.tDepart, v.apres.tRetour)}</td>
+                </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      ` : ''}
+
+      ${(d.pointsTemp||[]).length ? `
+      <div class="grid g2" style="margin-bottom:20px;">
+        <div class="panel">
+          <span class="tick-bl"></span><span class="tick-br"></span>
+          <div class="panel-title">Points de mesure — température ambiante</div>
+          <div class="table-scroll">
+            <table>
+              <thead><tr><th>Bâtiment</th><th>Niveau</th><th>Lieu</th><th>Exposition</th><th>Relevé</th></tr></thead>
+              <tbody>
+                ${d.pointsTemp.map(p => `
+                  <tr>
+                    <td>${esc(p.batiment||'—')}</td>
+                    <td>${esc(p.niveau||'—')}</td>
+                    <td>${esc(p.lieu||'—')}</td>
+                    <td>${esc(p.exposition||'—')}</td>
+                    <td class="mono">${p.releve!=null?fmt1(p.releve)+'°C':'—'}</td>
+                  </tr>`).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="panel">
+          <span class="tick-bl"></span><span class="tick-br"></span>
+          <div class="panel-title">Synthèse des campagnes de relevé</div>
+          <div class="geo-readout">
+            <div class="geo-kv"><span class="k">Relevés avant équilibrage</span><span class="v">${(d.logsAvant||[]).length}</span></div>
+            <div class="geo-kv"><span class="k">Relevés après équilibrage</span><span class="v">${(d.logsApres||[]).length}</span></div>
+            <div class="geo-kv"><span class="k">Points d'ambiance suivis</span><span class="v">${d.pointsTemp.length}</span></div>
+          </div>
+          <div class="geo-caption">Le détail horodaté de chaque campagne figure dans les deux tableaux ci-dessous.</div>
+        </div>
+      </div>
+      ` : ''}
+
+      ${(d.logsAvant||[]).length ? `
+      <div class="panel log-panel-avant" style="margin-bottom:20px;">
+        <span class="tick-bl"></span><span class="tick-br"></span>
+        <div class="panel-title">Températures — avant équilibrage</div>
+        <div class="table-scroll">
+          <table class="log-table" style="min-width:900px;">
+            <thead>
+              <tr>
+                <th rowspan="2">Date</th><th rowspan="2">Heure</th><th rowspan="2">T° Ext</th>
+                <th colspan="5" class="grp-amb">Températures ambiantes</th>
+                <th rowspan="2">Écart max</th>
+              </tr>
+              <tr>${[0,1,2,3,4].map(i => `<th>${pointLabel(d,i)}</th>`).join('')}</tr>
+            </thead>
+            <tbody>
+              ${d.logsAvant.map(r => `
+                <tr>
+                  <td class="mono">${esc(r.date||'—')}</td>
+                  <td class="mono">${esc(r.heure||'—')}</td>
+                  <td class="mono">${r.tExt!=null?fmt1(r.tExt)+'°':'—'}</td>
+                  ${r.amb.map(v => `<td class="mono">${v!=null?fmt1(v)+'°':'—'}</td>`).join('')}
+                  <td class="mono cell-strong">${r.ecartMax!=null?fmt1(r.ecartMax)+'°C':'—'}</td>
+                </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      ` : ''}
+
+      ${(d.logsApres||[]).length ? `
+      <div class="panel log-panel-apres" style="margin-bottom:20px;">
+        <span class="tick-bl"></span><span class="tick-br"></span>
+        <div class="panel-title">Températures — après équilibrage</div>
+        <div class="table-scroll">
+          <table class="log-table" style="min-width:900px;">
+            <thead>
+              <tr>
+                <th rowspan="2">Date</th><th rowspan="2">Heure</th><th rowspan="2">T° Ext</th>
+                <th colspan="5" class="grp-amb">Températures ambiantes</th>
+                <th rowspan="2">Écart max</th>
+              </tr>
+              <tr>${[0,1,2,3,4].map(i => `<th>${pointLabel(d,i)}</th>`).join('')}</tr>
+            </thead>
+            <tbody>
+              ${d.logsApres.map(r => `
+                <tr>
+                  <td class="mono">${esc(r.date||'—')}</td>
+                  <td class="mono">${esc(r.heure||'—')}</td>
+                  <td class="mono">${r.tExt!=null?fmt1(r.tExt)+'°':'—'}</td>
+                  ${r.amb.map(v => `<td class="mono">${v!=null?fmt1(v)+'°':'—'}</td>`).join('')}
+                  <td class="mono cell-strong">${r.ecartMax!=null?fmt1(r.ecartMax)+'°C':'—'}</td>
+                </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      ` : ''}
+
+      <div class="panel">
+        <span class="tick-bl"></span><span class="tick-br"></span>
+        <div class="panel-title">Photos de l'intervention</div>
+        <div class="photo-gallery">
+          ${photoFig('Bâtiment', d.photos.batiment)}
+          ${photoFig('Chaufferie', d.photos.chaufferie)}
+          ${photoFig('Température extérieure', d.photos.temperature)}
+        </div>
+        ${d.notes ? `<div class="geo-caption" style="margin-top:16px; font-size:12.5px; color:var(--ink-secondary);">${esc(d.notes)}</div>` : ''}
+      </div>
+    `;
+
+    document.getElementById('btn-back').addEventListener('click', () => go('dashboard'));
+    document.getElementById('btn-edit').addEventListener('click', () => go('form', d.id));
+    document.getElementById('btn-export').addEventListener('click', () => exportReport(d, s));
+    if (s){
+      renderChart(d, s);
+      document.getElementById('btn-toggle-table').addEventListener('click', () => {
+        S.chartTable[d.id] = !S.chartTable[d.id];
+        renderReportInto();
+      });
+    }
+  }
+
+  function photoFig(label, src){
+    return `<figure>${src ? `<img src="${src}" alt="${esc(label)}"/>` : `<div class="ph-empty">${icon('photo')}</div>`}<figcaption>${esc(label)}</figcaption></figure>`;
+  }
+
+  /* ---- Grouped bar chart (avant / après), SVG, with hover + table fallback ---- */
+  function renderChart(d, s){
+    const holder = document.getElementById('chart-holder');
+    if (!holder) return;
+    const rows = s.rows;
+    if (S.chartTable[d.id]){
+      holder.innerHTML = `
+        <div class="table-scroll">
+          <table>
+            <thead><tr><th>Point de mesure</th><th>Avant (°C)</th><th>Après (°C)</th></tr></thead>
+            <tbody>${rows.map(r => `<tr><td>${esc(r.label)}</td><td class="mono">${fmt1(r.avant)}</td><td class="mono">${fmt1(r.apres)}</td></tr>`).join('')}</tbody>
+          </table>
+        </div>`;
+      return;
+    }
+
+    const W = 640, H = 310, padL = 34, padR = 14, padT = 12, padB = 50;
+    const plotW = W - padL - padR, plotH = H - padT - padB;
+    const maxVal = Math.max(30, Math.ceil((Math.max(...rows.map(r=>Math.max(r.avant,r.apres)), 10) + 3) / 5) * 5);
+    const y = v => padT + plotH - (v / maxVal) * plotH;
+    const n = rows.length;
+    const groupW = plotW / n;
+    const barW = Math.min(26, groupW * 0.28);
+    const gap = 6;
+
+    let gridLines = '', ticks = '';
+    for (let v=0; v<=maxVal; v+=5){
+      gridLines += `<line x1="${padL}" y1="${y(v)}" x2="${W-padR}" y2="${y(v)}" stroke="var(--line)" stroke-width="1"/>`;
+      ticks += `<text x="${padL-8}" y="${y(v)+3}" text-anchor="end" font-size="9.5" font-family="var(--font-mono)" fill="var(--ink-muted)">${v}°</text>`;
+    }
+
+    let bars = '', labels = '';
+    rows.forEach((r, i) => {
+      const gx = padL + i*groupW + groupW/2;
+      const xa = gx - gap/2 - barW;
+      const xb = gx + gap/2;
+      const ya = y(r.avant), yb = y(r.apres);
+      bars += `
+        <rect class="bar" data-tip="${esc(r.label)} — avant : ${fmt1(r.avant)} °C" x="${xa}" y="${ya}" width="${barW}" height="${padT+plotH-ya}" rx="3" fill="var(--cold)"/>
+        <rect class="bar" data-tip="${esc(r.label)} — après : ${fmt1(r.apres)} °C" x="${xb}" y="${yb}" width="${barW}" height="${padT+plotH-yb}" rx="3" fill="var(--warm)"/>
+        <text x="${xa+barW/2}" y="${ya-5}" text-anchor="middle" font-size="9" font-family="var(--font-mono)" fill="var(--ink-secondary)">${fmt1(r.avant)}</text>
+        <text x="${xb+barW/2}" y="${yb-5}" text-anchor="middle" font-size="9" font-family="var(--font-mono)" fill="var(--ink-secondary)">${fmt1(r.apres)}</text>
+      `;
+      labels += wrapSvgLabel(r.label, gx, H-padB+15, 11, 9.5);
+    });
+
+    holder.innerHTML = `
+      <div style="position:relative;">
+        <svg viewBox="0 0 ${W} ${H}" style="width:100%; height:auto; overflow:visible;" id="bar-svg">
+          <g>${gridLines}</g>
+          <line x1="${padL}" y1="${padT+plotH}" x2="${W-padR}" y2="${padT+plotH}" stroke="var(--line-strong)" stroke-width="1.2"/>
+          <g>${ticks}</g>
+          <g>${bars}</g>
+          <g>${labels}</g>
+        </svg>
+        <div id="chart-tip" style="position:absolute; pointer-events:none; opacity:0; transition:opacity .1s; background:var(--ink-primary); color:var(--page); font-size:11px; font-weight:600; padding:5px 9px; border-radius:6px; white-space:nowrap; transform:translate(-50%,-115%); z-index:5;"></div>
+      </div>
+    `;
+    const svg = document.getElementById('bar-svg');
+    const tip = document.getElementById('chart-tip');
+    svg.querySelectorAll('.bar').forEach(bar => {
+      bar.addEventListener('mousemove', (e) => {
+        const rect = svg.getBoundingClientRect();
+        const x = e.clientX - rect.left, ty = e.clientY - rect.top;
+        tip.textContent = bar.getAttribute('data-tip');
+        tip.style.left = x + 'px'; tip.style.top = ty + 'px';
+        tip.style.opacity = 1;
+      });
+      bar.addEventListener('mouseleave', () => { tip.style.opacity = 0; });
+    });
+  }
+
+  /* ============================= EXPORT PDF ============================= */
+  /* Mise en page inspirée d'un rapport de réglage d'équilibrage papier type :
+     page de garde avec cadre titre + tableaux d'identification + signatures,
+     photos, tableau de relevé d'équilibrage, tableau des points de mesure
+     avec synthèse, tableaux + courbes des campagnes avant/après, synthèse
+     finale du dossier. */
+  const PDF_C = {
+    ink:[18,24,26], inkSoft:[75,86,88], inkMuted:[124,134,136],
+    line:[215,220,218], lineStrong:[185,192,190],
+    accent:[201,105,27], accentSoft:[244,227,208],
+    cold:[42,108,168], coldSoft:[219,233,244],
+    good:[12,163,12], goodSoft:[224,243,223],
+    critical:[197,58,58], criticalSoft:[251,225,225],
+    surface2:[246,247,246],
+  };
+  const PDF_PALETTE = [
+    [42,120,214],[235,104,52],[27,175,122],[237,161,0],[232,123,164],[74,58,167],[227,73,72],
+  ];
+
+  function pdfAvailable(){ return !!(window.jspdf && window.jspdf.jsPDF); }
+  function pdfNewDoc(orientation){
+    const { jsPDF } = window.jspdf;
+    return new jsPDF({ unit:'mm', format:'a4', orientation: orientation || 'portrait' });
+  }
+
+  function pdfBrandHeader(doc, title){
+    const w = doc.internal.pageSize.getWidth();
+    doc.setFillColor(...PDF_C.accent);
+    doc.rect(14, 10, 2.6, 11, 'F');
+    doc.setFont('helvetica','bold'); doc.setFontSize(13); doc.setTextColor(...PDF_C.ink);
+    doc.text('CALORIF SUIVI', 19.5, 16.5);
+    doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(...PDF_C.inkMuted);
+    doc.text('SUIVI CALORIFUGEAGE', 19.5, 20.3);
+    doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(...PDF_C.inkSoft);
+    doc.text(title, w-14, 17, { align:'right' });
+    doc.setDrawColor(...PDF_C.line); doc.setLineWidth(0.4);
+    doc.line(14, 25, w-14, 25);
+    return 33;
+  }
+
+  function pdfFooter(doc){
+    const pages = doc.internal.getNumberOfPages();
+    const w = doc.internal.pageSize.getWidth();
+    const h = doc.internal.pageSize.getHeight();
+    for (let i=1;i<=pages;i++){
+      doc.setPage(i);
+      doc.setDrawColor(...PDF_C.line); doc.setLineWidth(0.3);
+      doc.line(14, h-14, w-14, h-14);
+      doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(...PDF_C.inkMuted);
+      doc.text('Maquette CRM — document généré automatiquement, à usage de démonstration.', 14, h-10);
+      doc.text(`Page ${i} / ${pages}`, w-14, h-10, { align:'right' });
+    }
+  }
+
+  function pdfSectionBox(doc, x, y, w, text){
+    doc.setDrawColor(...PDF_C.lineStrong); doc.setLineWidth(0.4);
+    doc.rect(x, y, w, 8);
+    doc.setFont('helvetica','bold'); doc.setFontSize(9.5); doc.setTextColor(...PDF_C.ink);
+    doc.text(text, x + w/2, y + 5.6, { align:'center' });
+    return y + 8;
+  }
+
+  function pdfInfoTable(doc, x, y, w, rows){
+    doc.autoTable({
+      startY: y, margin:{ left:x, right: doc.internal.pageSize.getWidth()-x-w },
+      tableWidth: w, theme:'grid',
+      styles:{ font:'helvetica', fontSize:8.5, textColor: PDF_C.ink, cellPadding:2.6, lineColor: PDF_C.line, lineWidth:0.25 },
+      columnStyles:{ 0:{ fillColor: PDF_C.surface2, fontStyle:'bold', cellWidth: w*0.38 } },
+      body: rows,
+    });
+    return doc.lastAutoTable.finalY;
+  }
+
+  function pdfSignatureBlock(doc, x, y, w, h){
+    const gap = 4, colW = (w - gap) / 2;
+    [['Signature et cachet — entreprise', x], ['Signature et cachet — client', x + colW + gap]].forEach(([label, cx]) => {
+      doc.setFillColor(...PDF_C.ink);
+      doc.rect(cx, y, colW, 7, 'F');
+      doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(255,255,255);
+      doc.text(label, cx+3, y+4.7);
+      doc.setDrawColor(...PDF_C.line); doc.setLineWidth(0.3); doc.setFillColor(...PDF_C.surface2);
+      doc.rect(cx, y+7, colW, h-7, 'FD');
+    });
+    return y + h;
+  }
+
+  function pdfLineChart(doc, x, y, w, h, title, pointLabels, series){
+    doc.setFont('helvetica','bold'); doc.setFontSize(8.5); doc.setTextColor(...PDF_C.ink);
+    doc.text(title, x, y);
+    const top = y + 4, chartH = h - 15, chartW = w;
+    const allVals = series.flatMap(s => s.values.filter(v => v!=null && !isNaN(v)).map(Number));
+    const maxV = Math.max(30, ...(allVals.length?[Math.ceil(Math.max(...allVals)/5)*5]:[30]));
+    const minV = 0;
+    doc.setDrawColor(...PDF_C.line); doc.setLineWidth(0.15);
+    for (let t=minV; t<=maxV; t+=5){
+      const gy = top + chartH - (t-minV)/(maxV-minV)*chartH;
+      doc.line(x, gy, x+chartW, gy);
+      doc.setFont('helvetica','normal'); doc.setFontSize(6.3); doc.setTextColor(...PDF_C.inkMuted);
+      doc.text(t+'°', x-2, gy+1, { align:'right' });
+    }
+    doc.setDrawColor(...PDF_C.lineStrong); doc.setLineWidth(0.3);
+    doc.rect(x, top, chartW, chartH);
+    const n = pointLabels.length;
+    const stepX = n>1 ? chartW/(n-1) : chartW/2;
+    pointLabels.forEach((lbl,i) => {
+      const gx = n>1 ? x + stepX*i : x + chartW/2;
+      doc.setFont('helvetica','normal'); doc.setFontSize(6.3); doc.setTextColor(...PDF_C.inkMuted);
+      doc.text(String(lbl), gx, top+chartH+4.2, { align:'center', maxWidth: Math.max(stepX,18) });
+    });
+    series.forEach(s => {
+      doc.setDrawColor(...s.color); doc.setLineWidth(0.6);
+      let prev = null;
+      s.values.forEach((v,i) => {
+        if (v==null || isNaN(v)){ prev = null; return; }
+        const gx = n>1 ? x + stepX*i : x + chartW/2;
+        const gy = top + chartH - (Number(v)-minV)/(maxV-minV)*chartH;
+        if (prev) doc.line(prev[0], prev[1], gx, gy);
+        doc.setFillColor(...s.color); doc.circle(gx, gy, 0.7, 'F');
+        prev = [gx, gy];
+      });
+    });
+    let lx = x, ly = top+chartH+9.5;
+    doc.setFont('helvetica','normal'); doc.setFontSize(6.5);
+    series.forEach(s => {
+      doc.setFillColor(...s.color); doc.rect(lx, ly-2.1, 3, 2, 'F');
+      doc.setTextColor(...PDF_C.inkSoft);
+      doc.text(s.label, lx+4, ly);
+      lx += doc.getTextWidth(s.label) + 12;
+    });
+    return top + chartH + 13;
+  }
+
+  function pdfLoadImage(dataUrl){
+    return new Promise((resolve) => {
+      if (!dataUrl){ resolve(null); return; }
+      const img = new Image();
+      img.onload = () => resolve({ el: img, w: img.naturalWidth || 1, h: img.naturalHeight || 1 });
+      img.onerror = () => resolve(null);
+      img.src = dataUrl;
+    });
+  }
+
+  function pdfPhotoCell(doc, x, y, w, h, label, imgInfo){
+    doc.setDrawColor(...PDF_C.lineStrong); doc.setLineWidth(0.3);
+    doc.setFillColor(...PDF_C.surface2);
+    doc.rect(x, y, w, h, 'FD');
+    if (imgInfo){
+      const pad = 2.5;
+      const availW = w - pad*2, availH = h - pad*2 - 6;
+      const ratio = Math.min(availW/imgInfo.w, availH/imgInfo.h);
+      const dw = imgInfo.w*ratio, dh = imgInfo.h*ratio;
+      const dx = x + (w-dw)/2, dy = y + pad + (availH-dh)/2;
+      try{ doc.addImage(imgInfo.el, 'JPEG', dx, dy, dw, dh); }catch(e){}
+    } else {
+      doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(...PDF_C.inkMuted);
+      doc.text('Aucune photo', x+w/2, y+h/2 - 3, { align:'center' });
+    }
+    doc.setFont('helvetica','bold'); doc.setFontSize(7.6); doc.setTextColor(...PDF_C.inkSoft);
+    doc.text(label, x+w/2, y+h-3.5, { align:'center' });
+    return y + h;
+  }
+
+  function pdfLogRows(logs){
+    return (logs||[]).map(r => [
+      r.date||'—', r.heure||'—', r.tExt??'—',
+      ...([0,1,2,3,4].map(i => (r.amb && r.amb[i]!=null) ? r.amb[i] : '—')),
+      r.ecartMax??'—',
+    ]);
+  }
+
+  async function buildReportPdf(d, s){
+    const doc = pdfNewDoc('portrait');
+    const pageW = doc.internal.pageSize.getWidth();
+    const marginX = 14;
+    const contentW = pageW - marginX*2;
+    const statusLabel = (STATUS[d.statut] && STATUS[d.statut].label) || d.statut;
+
+    /* ---- Page 1 : garde ---- */
+    let y = pdfBrandHeader(doc, `Rapport d'intervention · ${d.numero || '—'}`);
+    doc.setDrawColor(...PDF_C.cold); doc.setLineWidth(0.6);
+    doc.rect(marginX, y, contentW, 20);
+    doc.setFont('helvetica','bold'); doc.setFontSize(15); doc.setTextColor(...PDF_C.ink);
+    doc.text(`DOSSIER N° ${d.numero || '—'}`, marginX + contentW/2, y + 8.5, { align:'center' });
+    doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(...PDF_C.inkSoft);
+    doc.text("Réglage des organes d'équilibrage d'une installation de chauffage à eau chaude", marginX + contentW/2, y + 15.5, { align:'center', maxWidth: contentW-10 });
+    y += 26;
+
+    doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(...PDF_C.ink);
+    doc.text(`Statut du suivi : ${statusLabel}`, marginX, y+5);
+    y += 10;
+
+    doc.setFont('helvetica','bold'); doc.setFontSize(9.5); doc.setTextColor(...PDF_C.ink);
+    doc.text('Information sur le site', marginX, y+4);
+    y += 6;
+    y = pdfInfoTable(doc, marginX, y, contentW, [
+      ['Résidence / client', d.residence || d.client.nom || '—'],
+      ['Adresse postale', [d.adresse.rue, [d.adresse.cp, d.adresse.ville].filter(Boolean).join(' ')].filter(Boolean).join(' — ') || '—'],
+      ['Référence cadastrale', d.refCadastrale || '—'],
+      ['Type de chauffage', d.typeLogement.typeEnergie || '—'],
+      ['Nombre de logements', d.typeLogement.nbLogements || '—'],
+      ['Surface chauffée', d.typeLogement.surfaceM2 ? d.typeLogement.surfaceM2 + ' m²' : '—'],
+      ['Nombre de sous-stations', d.typeLogement.nbSousStations || '—'],
+    ]);
+    y += 8;
+
+    doc.setFont('helvetica','bold'); doc.setFontSize(9.5); doc.setTextColor(...PDF_C.ink);
+    doc.text("Information sur l'intervention", marginX, y+4);
+    y += 6;
+    y = pdfInfoTable(doc, marginX, y, contentW, [
+      ["Date d'intervention", d.dateIntervention || '—'],
+      ['Technicien assigné', userName(d.technicienId) || 'non assigné'],
+      ['Température extérieure relevée', d.typeLogement.tempExterieure !== '' && d.typeLogement.tempExterieure!=null ? d.typeLogement.tempExterieure + '°C' : '—'],
+      ['Contact client', [d.client.nom, d.client.telephone].filter(Boolean).join(' — ') || '—'],
+      ['Gardien sur place', [d.gardien.nom, d.gardien.telephone].filter(Boolean).join(' — ') || '—'],
+    ]);
+    y += 10;
+
+    pdfSignatureBlock(doc, marginX, y, contentW, 32);
+
+    /* ---- Page 2 : photos ---- */
+    doc.addPage();
+    y = pdfBrandHeader(doc, 'Photos de l\'intervention');
+    y = pdfSectionBox(doc, marginX, y, contentW, 'PHOTOS');
+    y += 6;
+    const [imgBat, imgChauff, imgTemp] = await Promise.all([
+      pdfLoadImage(d.photos.batiment), pdfLoadImage(d.photos.chaufferie), pdfLoadImage(d.photos.temperature),
+    ]);
+    const cellW = (contentW - 8) / 3, cellH = 70;
+    pdfPhotoCell(doc, marginX, y, cellW, cellH, 'Bâtiment', imgBat);
+    pdfPhotoCell(doc, marginX + cellW + 4, y, cellW, cellH, 'Chaufferie', imgChauff);
+    pdfPhotoCell(doc, marginX + (cellW+4)*2, y, cellW, cellH, 'Température extérieure', imgTemp);
+    y += cellH + 12;
+    if (d.notes){
+      doc.setFont('helvetica','bold'); doc.setFontSize(8.5); doc.setTextColor(...PDF_C.ink);
+      doc.text('Notes', marginX, y); y += 5;
+      doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(...PDF_C.inkSoft);
+      doc.text(d.notes, marginX, y, { maxWidth: contentW });
+    }
+
+    /* ---- Page 3 : relevé d'équilibrage (paysage) ---- */
+    doc.addPage('a4','landscape');
+    const pageWL = doc.internal.pageSize.getWidth();
+    const contentWL = pageWL - marginX*2;
+    y = pdfBrandHeader(doc, "Relevé d'équilibrage des vannes");
+    y = pdfSectionBox(doc, marginX, y, contentWL, "TABLEAU DE RELEVÉ D'ÉQUILIBRAGE");
+    y += 4;
+    doc.autoTable({
+      startY: y, margin:{ left:marginX, right:marginX }, theme:'grid',
+      styles:{ font:'helvetica', fontSize:7.6, textColor:PDF_C.ink, cellPadding:2, lineColor:PDF_C.line, lineWidth:0.2, halign:'center', valign:'middle' },
+      headStyles:{ fillColor:PDF_C.ink, textColor:255, fontStyle:'bold', fontSize:7.6 },
+      head: [
+        [
+          {content:'Repérage\nvanne', rowSpan:2}, {content:'Sonde\nambiance', rowSpan:2}, {content:'Marque', rowSpan:2}, {content:'Type', rowSpan:2}, {content:'DN', rowSpan:2},
+          {content:'Mesure avant équilibrage', colSpan:4}, {content:'Débit\nthéo. visé\n(L/h)', rowSpan:2},
+          {content:'Mesure après équilibrage', colSpan:4},
+        ],
+        ['Débit L/h','Tours','T° Dép.','T° Ret.','Débit L/h','Tours','T° Dép.','T° Ret.'],
+      ],
+      body: (d.vannes||[]).map(v => [
+        v.reperage||'—', v.sonde==='oui'?'Oui':'Non', v.marque||'—', v.type||'—', v.dn||'—',
+        v.avant.debit??'—', v.avant.tours??'—', v.avant.tDepart??'—', v.avant.tRetour??'—',
+        v.debitTheoriqueVise??'—',
+        v.apres.debit??'—', v.apres.tours??'—', v.apres.tDepart??'—', v.apres.tRetour??'—',
+      ]),
+    });
+
+    /* ---- Page 4 : points de mesure + synthèse ---- */
+    doc.addPage('a4','portrait');
+    y = pdfBrandHeader(doc, 'Points de mesure — température ambiante');
+    y = pdfSectionBox(doc, marginX, y, contentW, "TABLEAU D'ENREGISTREMENT DES TEMPÉRATURES");
+    y += 4;
+    doc.autoTable({
+      startY: y, margin:{ left:marginX, right:marginX }, theme:'grid',
+      styles:{ font:'helvetica', fontSize:8.5, textColor:PDF_C.ink, cellPadding:2.4, lineColor:PDF_C.line, lineWidth:0.2 },
+      headStyles:{ fillColor:PDF_C.cold, textColor:255, fontStyle:'bold' },
+      head: [['Bâtiment','Niveau','Lieu','Exposition','Relevé T° (°C)']],
+      body: (d.pointsTemp||[]).map(p => [p.batiment||'—', p.niveau||'—', p.lieu||'—', p.exposition||'—', p.releve??'—']),
+    });
+    y = doc.lastAutoTable.finalY + 8;
+
+    const releves = (d.pointsTemp||[]).map(p => Number(p.releve)).filter(v => !isNaN(v));
+    const tMin = releves.length ? Math.min(...releves) : null;
+    const tMax = releves.length ? Math.max(...releves) : null;
+    const delta = (tMin!=null && tMax!=null) ? (tMax - tMin) : null;
+    const moyenne = releves.length ? releves.reduce((a,b)=>a+b,0)/releves.length : null;
+    doc.setFont('helvetica','bold'); doc.setFontSize(9.5); doc.setTextColor(...PDF_C.ink);
+    doc.text('Synthèse des relevés', marginX, y); y += 5;
+    doc.autoTable({
+      startY: y, margin:{ left:marginX, right:marginX }, theme:'grid',
+      styles:{ font:'helvetica', fontSize:8.5, cellPadding:3, halign:'center', lineColor:PDF_C.line, lineWidth:0.2 },
+      headStyles:{ fillColor:PDF_C.surface2, textColor:PDF_C.ink, fontStyle:'bold' },
+      head: [['T° min','T° max','Écart max','T° moyenne']],
+      body: [[tMin!=null?fmt1(tMin)+'°C':'—', tMax!=null?fmt1(tMax)+'°C':'—', delta!=null?fmt1(delta)+'°C':'—', moyenne!=null?fmt1(moyenne)+'°C':'—']],
+      didParseCell: (data) => {
+        if (data.section==='body' && data.column.index===2){
+          data.cell.styles.fillColor = PDF_C.critical;
+          data.cell.styles.textColor = 255;
+          data.cell.styles.fontStyle = 'bold';
+        }
+      },
+    });
+
+    /* ---- Pages 5/6 : campagnes avant / après ---- */
+    const pointLabels = (d.pointsTemp||[]).map((p,i) => p.niveau || p.batiment || ('Pt '+(i+1)));
+    [
+      { key:'avant', title:'Températures — avant équilibrage', rows:d.logsAvant, head:'TABLEAU DES TEMPÉRATURES AVANT ÉQUILIBRAGE' },
+      { key:'apres', title:'Températures — après équilibrage', rows:d.logsApres, head:'TABLEAU DES TEMPÉRATURES APRÈS ÉQUILIBRAGE' },
+    ].forEach(section => {
+      if (!section.rows || !section.rows.length) return;
+      doc.addPage('a4','portrait');
+      y = pdfBrandHeader(doc, section.title);
+      y = pdfSectionBox(doc, marginX, y, contentW, section.head);
+      y += 4;
+      doc.autoTable({
+        startY: y, margin:{ left:marginX, right:marginX }, theme:'grid',
+        styles:{ font:'helvetica', fontSize:7.8, textColor:PDF_C.ink, cellPadding:2, lineColor:PDF_C.line, lineWidth:0.2, halign:'center' },
+        headStyles:{ fillColor: section.key==='avant' ? PDF_C.cold : PDF_C.accent, textColor:255, fontStyle:'bold', fontSize:7.6 },
+        head: [['Date','Heure','T° Ext', ...pointLabels.map((l,i)=>l||('Amb. '+(i+1))), 'Écart max']],
+        body: pdfLogRows(section.rows),
+      });
+      y = doc.lastAutoTable.finalY + 10;
+      const series = section.rows.map((r,i) => ({
+        label: r.date || ('Relevé '+(i+1)),
+        color: PDF_PALETTE[i % PDF_PALETTE.length],
+        values: [0,1,2,3,4].map(idx => r.amb ? r.amb[idx] : null),
+      }));
+      if (pointLabels.length){
+        pdfLineChart(doc, marginX, y, contentW, 78, 'Courbe des relevés — ' + section.title.split('—')[1].trim(), pointLabels, series);
+      }
+    });
+
+    /* ---- Dernière page : synthèse finale ---- */
+    doc.addPage('a4','portrait');
+    y = pdfBrandHeader(doc, 'Synthèse du dossier');
+    y = pdfSectionBox(doc, marginX, y, contentW, 'SYNTHÈSE — RAPPORT SYNOPTIQUE');
+    y += 8;
+    if (s){
+      const kpis = [
+        ['Écart de température — avant', fmt1(s.ecartAvant)+' °C'],
+        ['Écart de température — après', fmt1(s.ecartApres)+' °C'],
+        ["Réduction de l'écart entre points", (s.reduction>=0?'-':'+')+fmt1(Math.abs(s.reduction))+' %'],
+        ['Gain moyen de température', (s.gainMoyen>=0?'+':'')+fmt1(s.gainMoyen)+' °C'],
+      ];
+      const cw = (contentW - 12) / 2;
+      kpis.forEach((k,i) => {
+        const kx = marginX + (i%2)*(cw+12), ky = y + Math.floor(i/2)*24;
+        doc.setDrawColor(...PDF_C.lineStrong); doc.setLineWidth(0.3); doc.setFillColor(...PDF_C.surface2);
+        doc.rect(kx, ky, cw, 20, 'FD');
+        doc.setFont('helvetica','bold'); doc.setFontSize(13); doc.setTextColor(...PDF_C.ink);
+        doc.text(k[1], kx+5, ky+9);
+        doc.setFont('helvetica','normal'); doc.setFontSize(7.6); doc.setTextColor(...PDF_C.inkMuted);
+        doc.text(k[0], kx+5, ky+15.5, { maxWidth: cw-10 });
+      });
+      y += 54;
+      doc.setFillColor(...(s.beneficial ? PDF_C.goodSoft : PDF_C.accentSoft));
+      doc.setDrawColor(...(s.beneficial ? PDF_C.good : PDF_C.accent));
+      doc.setLineWidth(0.4);
+      doc.rect(marginX, y, contentW, 16, 'FD');
+      doc.setFont('helvetica','bold'); doc.setFontSize(10);
+      doc.setTextColor(...(s.beneficial ? PDF_C.good : PDF_C.accent));
+      doc.text(s.beneficial ? 'OK — Calorifugeage jugé bénéfique' : '! Résultats à confirmer par une nouvelle campagne', marginX+6, y+10);
+      y += 26;
+    } else {
+      doc.setFont('helvetica','normal'); doc.setFontSize(9.5); doc.setTextColor(...PDF_C.inkMuted);
+      doc.text('Synthèse indisponible : compléter les points de mesure et au moins un relevé avant / après équilibrage.', marginX, y, { maxWidth: contentW });
+      y += 16;
+    }
+    pdfSignatureBlock(doc, marginX, y, contentW, 32);
+
+    pdfFooter(doc);
+    return doc;
+  }
+
+  async function exportReport(d, s){
+    if (!pdfAvailable()){
+      toast("Export PDF indisponible (bibliothèque non chargée) — vérifiez la connexion.");
+      return;
+    }
+    try{
+      const doc = await buildReportPdf(d, s);
+      const filename = `rapport-${(d.numero||'dossier').replace(/[^a-z0-9-]/gi,'_')}.pdf`;
+      const blob = doc.output('blob');
+      if (S.downloads){
+        try{
+          await S.downloads.save({ filename, data: blob });
+          toast('Rapport PDF exporté.');
+          return;
+        }catch(e){ /* fall through to local */ }
+      }
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = filename; document.body.appendChild(a); a.click();
+      document.body.removeChild(a); URL.revokeObjectURL(url);
+      toast('Rapport PDF exporté.');
+    }catch(e){
+      toast("Erreur lors de la génération du PDF.");
+    }
+  }
+
+  /* ============================= BOOT ============================= */
+  render();
+  initCapabilities();
+
+})();
+</script>
