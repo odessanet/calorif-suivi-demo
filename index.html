@@ -553,6 +553,7 @@ svg.leaflet-zoom-animated{will-change:transform}
     thermo:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 14.4V5a2 2 0 0 0-4 0v9.4a4 4 0 1 0 4 0Z"/></svg>',
     ext:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 4h6v6M20 4 10 14"/><path d="M18 13v6a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h6"/></svg>',
     photo:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3.25" y="4.5" width="17.5" height="15" rx="2.2"/><circle cx="8.7" cy="9.6" r="1.4"/><path d="M4.3 16.8l4.6-4.4a1.5 1.5 0 0 1 2 0L15 16.2"/><path d="M13.6 14.5l1.7-1.6a1.5 1.5 0 0 1 2 0l3.2 3"/></svg>',
+    search:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m20 20-4.8-4.8"/></svg>',
   };
   function icon(name){ return ICONS[name] || ''; }
 
@@ -840,6 +841,42 @@ svg.leaflet-zoom-animated{will-change:transform}
       wire(rueInput, rueList, (q) => banSearch(q, { limit: 6 }).then(res => (res || []).map(r => ({ label: r.label, sub: '', data: r }))),
         (data) => setAdresseFields({ rue: data.rue, cp: data.cp, ville: data.ville, lat: data.lat, lng: data.lng }));
     }
+  }
+
+  // Bouton "loupe" à côté du champ Ville : déclenche manuellement une
+  // recherche BAN sur l'adresse complète telle que tapée (rue + CP + ville),
+  // sans attendre que l'utilisateur clique une suggestion — utile s'il tape
+  // l'adresse d'un coup puis clique ailleurs. Applique lat/lng puis, via
+  // setAdresseFields, relance automatiquement la recherche de la référence
+  // cadastrale et le rafraîchissement du plan.
+  function attachGeocodeButton(){
+    const btn = document.getElementById('btn-geocode');
+    const status = document.getElementById('geocode-status');
+    if (!btn) return;
+    btn.addEventListener('click', async () => {
+      const rue = (document.getElementById('f-rue') || {}).value || '';
+      const cp = (document.getElementById('f-cp') || {}).value || '';
+      const ville = (document.getElementById('f-ville') || {}).value || '';
+      const q = [rue, cp, ville].filter(Boolean).join(' ').trim();
+      if (!q){ if (status) status.textContent = 'Renseignez au moins la rue ou la ville avant de rechercher.'; return; }
+      btn.disabled = true;
+      if (status) status.textContent = 'Recherche en cours…';
+      const res = await banSearch(q, { limit: 1 });
+      btn.disabled = false;
+      if (res === null){ if (status) status.textContent = "Service d'adresse injoignable ici — fonctionne une fois le site auto-hébergé (GitHub Pages)."; return; }
+      if (!res.length){ if (status) status.textContent = 'Adresse introuvable — vérifiez la saisie.'; return; }
+      const r = res[0];
+      setAdresseFields({ rue: r.rue || rue, cp: r.cp || cp, ville: r.ville || ville, lat: r.lat, lng: r.lng });
+      if (status) status.textContent = 'Coordonnées mises à jour — recherche de la référence cadastrale…';
+      if (isFinite(r.lat) && isFinite(r.lng)){
+        const check = () => {
+          if (S.draft && String(S.draft.lat) === String(r.lat)){
+            if (status) status.textContent = S.draft.refCadastrale ? 'Coordonnées et référence cadastrale mises à jour.' : 'Coordonnées mises à jour (parcelle non trouvée — service injoignable ou hors zone).';
+          }
+        };
+        setTimeout(check, 3800);
+      }
+    });
   }
 
   /* ============================= SEED DATA ============================= */
@@ -1308,10 +1345,14 @@ svg.leaflet-zoom-animated{will-change:transform}
                   <div class="ac-list" id="ac-cp" hidden></div>
                 </div>
                 <div class="field ac-wrap"><label>Ville</label>
-                  <input type="text" name="adresse.ville" id="f-ville" value="${esc(d.adresse.ville)}" autocomplete="off"/>
+                  <div style="display:flex; gap:6px;">
+                    <input type="text" name="adresse.ville" id="f-ville" value="${esc(d.adresse.ville)}" autocomplete="off" style="flex:1; min-width:0;"/>
+                    <button type="button" id="btn-geocode" class="btn btn-sm" title="Rechercher les coordonnées et le cadastre pour cette adresse" style="flex:0 0 auto; padding:0 11px;">${icon('search')}</button>
+                  </div>
                   <div class="ac-list" id="ac-ville" hidden></div>
                 </div>
               </div>
+              <div class="hint" id="geocode-status" style="min-height:14px;"></div>
               <div class="grid g2">
                 <div class="field"><label>Latitude</label><input class="mono-input" type="text" name="lat" id="f-lat" value="${esc(d.lat)}" placeholder="48.1147"/></div>
                 <div class="field"><label>Longitude</label><input class="mono-input" type="text" name="lng" id="f-lng" value="${esc(d.lng)}" placeholder="-1.6794"/></div>
@@ -1456,6 +1497,7 @@ svg.leaflet-zoom-animated{will-change:transform}
     renderLogTable('apres');
     renderGeoPreview();
     attachAddressAutocomplete();
+    attachGeocodeButton();
 
     document.getElementById('btn-back').addEventListener('click', () => go(isEdit ? 'report' : 'dashboard', isEdit ? S.dossierId : null));
     document.getElementById('btn-cancel').addEventListener('click', () => go(isEdit ? 'report' : 'dashboard', isEdit ? S.dossierId : null));
@@ -1787,8 +1829,8 @@ svg.leaflet-zoom-animated{will-change:transform}
 
   /* ---- Carte cadastrale réelle (IGN Géoplateforme, via Leaflet) ---- */
   const IGN_WMTS = 'https://data.geopf.fr/wmts';
-  function ignWmtsTemplate(layer, style, matrixSet){
-    return `${IGN_WMTS}?SERVICE=WMTS&VERSION=1.0.0&REQUEST=GetTile&LAYER=${encodeURIComponent(layer)}&STYLE=${encodeURIComponent(style)}&TILEMATRIXSET=${matrixSet||'PM'}&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}&FORMAT=image/png`;
+  function ignWmtsTemplate(layer, style, matrixSet, format){
+    return `${IGN_WMTS}?SERVICE=WMTS&VERSION=1.0.0&REQUEST=GetTile&LAYER=${encodeURIComponent(layer)}&STYLE=${encodeURIComponent(style)}&TILEMATRIXSET=${matrixSet||'PM'}&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}&FORMAT=${encodeURIComponent(format||'image/png')}`;
   }
   function lonLatToTileXYZ(lon, lat, z){
     const latRad = lat * Math.PI/180;
@@ -1803,7 +1845,7 @@ svg.leaflet-zoom-animated{will-change:transform}
     _mapAvailPromise = new Promise((resolve) => {
       if (!window.L){ resolve(false); return; }
       const t = lonLatToTileXYZ(2.3522, 48.8566, 10); // Paris — couverture ortho garantie
-      const url = ignWmtsTemplate('ORTHOIMAGERY.ORTHOPHOTOS','normal')
+      const url = ignWmtsTemplate('ORTHOIMAGERY.ORTHOPHOTOS','normal','PM','image/jpeg')
         .replace('{z}', t.z).replace('{y}', t.y).replace('{x}', t.x);
       const img = new Image();
       let settled = false;
@@ -1835,10 +1877,10 @@ svg.leaflet-zoom-animated{will-change:transform}
       if (!holder || !window.L || !document.body.contains(holder)) return;
       try{
         const map = L.map(holder, { attributionControl:true, zoomControl:true, scrollWheelZoom:false }).setView([lat, lng], 18);
-        L.tileLayer(ignWmtsTemplate('ORTHOIMAGERY.ORTHOPHOTOS','normal'), {
+        L.tileLayer(ignWmtsTemplate('ORTHOIMAGERY.ORTHOPHOTOS','normal','PM','image/jpeg'), {
           maxZoom:19, minZoom:5, attribution:'&copy; IGN-F/Géoportail',
         }).addTo(map);
-        L.tileLayer(ignWmtsTemplate('CADASTRALPARCELS.PARCELLAIRE_EXPRESS','bdparcellaire'), {
+        L.tileLayer(ignWmtsTemplate('CADASTRALPARCELS.PARCELLAIRE_EXPRESS','normal','PM','image/png'), {
           maxZoom:19, minZoom:14, opacity:0.9,
         }).addTo(map);
         L.marker([lat, lng], {
