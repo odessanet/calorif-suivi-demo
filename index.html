@@ -692,7 +692,8 @@ svg.leaflet-zoom-animated{will-change:transform}
 
   // Writes resolved address/geo values into both S.draft and the visible
   // form inputs, then refreshes the cadastral panel if the coordinates
-  // changed (programmatic .value writes don't fire native 'input' events).
+  // changed (programmatic .value writes don't fire native 'input' events),
+  // and kicks off an automatic cadastral-parcel lookup for the new point.
   function setAdresseFields(vals){
     const d = S.draft;
     if (vals.rue !== undefined){ d.adresse.rue = vals.rue; const el = document.getElementById('f-rue'); if (el) el.value = vals.rue; }
@@ -701,7 +702,52 @@ svg.leaflet-zoom-animated{will-change:transform}
     let geoChanged = false;
     if (vals.lat != null && isFinite(vals.lat)){ d.lat = String(vals.lat); const el = document.getElementById('f-lat'); if (el) el.value = d.lat; geoChanged = true; }
     if (vals.lng != null && isFinite(vals.lng)){ d.lng = String(vals.lng); const el = document.getElementById('f-lng'); if (el) el.value = d.lng; geoChanged = true; }
-    if (geoChanged) renderGeoPreview();
+    if (geoChanged){
+      renderGeoPreview();
+      lookupParcelleForDraft();
+    }
+  }
+
+  // IGN Apicarto — module cadastre: given a point, returns the official
+  // cadastral parcel(s) covering it (section + numéro + commune). Same
+  // silent-CSP-block guard as banSearch (manual timeout race), and same
+  // self-hosted-only reach: unreachable inside the Artifact sandbox.
+  function ignParcelleAt(lat, lng){
+    const geom = JSON.stringify({ type: 'Point', coordinates: [lng, lat] });
+    const url = 'https://apicarto.ign.fr/api/cadastre/parcelle?geom=' + encodeURIComponent(geom) + '&_limit=1';
+    const fetchP = fetch(url, { headers: { Accept: 'application/json' } })
+      .then(r => r.ok ? r.json() : Promise.reject(new Error('ign-http-' + r.status)))
+      .then(data => {
+        const f = data.features && data.features[0];
+        if (!f) return null;
+        const p = f.properties || {};
+        const insee = String(p.code_dep || '') + String(p.code_com || '');
+        const section = p.section || '';
+        const numero = p.numero ? String(p.numero).padStart(4, '0') : '';
+        if (!section && !numero) return null;
+        return { ref: [insee, section, numero].filter(Boolean).join('/'), section, numero, insee };
+      });
+    const timeoutP = new Promise((_, reject) => setTimeout(() => reject(new Error('ign-timeout')), 3500));
+    return Promise.race([fetchP, timeoutP]).catch(() => null);
+  }
+
+  // Looks up the parcel under the draft's current lat/lng and fills
+  // "Référence cadastrale" automatically. Silently does nothing when the
+  // lookup is unreachable (sandboxed preview) or the point moved on again
+  // before the response came back (stale-response guard).
+  function lookupParcelleForDraft(){
+    const d = S.draft;
+    const lat = parseFloat(d.lat), lng = parseFloat(d.lng);
+    if (!isFinite(lat) || !isFinite(lng)) return;
+    const reqLat = d.lat, reqLng = d.lng;
+    ignParcelleAt(lat, lng).then(res => {
+      if (!res) return;
+      if (S.draft !== d || d.lat !== reqLat || d.lng !== reqLng) return;
+      d.refCadastrale = res.ref;
+      const el = document.getElementById('f-refcad');
+      if (el) el.value = res.ref;
+      renderGeoPreview();
+    });
   }
 
   function attachAddressAutocomplete(){
@@ -1271,7 +1317,7 @@ svg.leaflet-zoom-animated{will-change:transform}
                 <div class="field"><label>Longitude</label><input class="mono-input" type="text" name="lng" id="f-lng" value="${esc(d.lng)}" placeholder="-1.6794"/></div>
               </div>
               <div class="field"><label>Référence cadastrale <span class="hint">section / parcelle</span></label>
-                <input class="mono-input" type="text" name="refCadastrale" value="${esc(d.refCadastrale)}" placeholder="035/CR/0248"/></div>
+                <input class="mono-input" type="text" name="refCadastrale" id="f-refcad" value="${esc(d.refCadastrale)}" placeholder="035/CR/0248"/></div>
             </div>
             <div id="geo-preview"></div>
           </div>
@@ -1683,7 +1729,18 @@ svg.leaflet-zoom-animated{will-change:transform}
     d.typeLogement.nbSousStations = get('typeLogement.nbSousStations').value.trim();
     d.typeLogement.tempExterieure = get('typeLogement.tempExterieure').value.trim();
     d.notes = get('notes').value;
-    if (!d.numero) d.numero = 'S/N-' + d.id.slice(-6);
+    if (!d.numero) d.numero = generateNumeroDossier();
+  }
+
+  // Numéro de dossier auto-généré au format 2026-XXXXXXX (année-MMJJ + suffixe
+  // aléatoire à 3 chiffres) quand le champ est laissé vide à l'enregistrement.
+  function generateNumeroDossier(){
+    const now = new Date();
+    const yyyy = now.getFullYear();
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    const dd = String(now.getDate()).padStart(2, '0');
+    const seq = String(Math.floor(Math.random() * 900) + 100);
+    return `${yyyy}-${mm}${dd}${seq}`;
   }
 
   /* ---- Geo / cadastre preview ----
