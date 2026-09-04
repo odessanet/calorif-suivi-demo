@@ -330,11 +330,15 @@
   .vanne-table .rm-btn:hover{ color:var(--critical); }
   .vanne-table .delta-cell{ text-align:center; font-size:11.5px; }
 
+  /* Tableau du rapport (lecture seule) — même logique que .vanne-table :
+     largeurs proportionnelles + table-layout:fixed pour tenir sans scroll
+     horizontal dans le panneau. */
+  .report-vanne-table{ width:100%; table-layout:fixed; }
   .report-vanne-table th.grp-avant{ background:var(--cold-soft); color:var(--cold); }
   .report-vanne-table th.grp-apres{ background:var(--warm-soft); color:var(--warm); }
-  .report-vanne-table th, .report-vanne-table td{ padding:8px 9px; white-space:nowrap; }
-  .report-vanne-table th.grp{ text-align:center; font-size:10.5px; letter-spacing:0.04em; }
-  .report-vanne-table thead tr:last-child th{ font-size:10px; font-weight:600; color:var(--ink-muted); text-transform:none; letter-spacing:0; }
+  .report-vanne-table th, .report-vanne-table td{ padding:5px 4px; font-size:11.5px; white-space:normal; overflow-wrap:break-word; word-break:break-word; }
+  .report-vanne-table th.grp{ text-align:center; font-size:10px; letter-spacing:0.03em; }
+  .report-vanne-table thead tr:last-child th{ font-size:9.5px; font-weight:600; color:var(--ink-muted); text-transform:none; letter-spacing:0; }
 
   /* Points de mesure + logs de température (avant/après) */
   .points-table{ min-width:640px; }
@@ -2040,7 +2044,13 @@ svg.leaflet-zoom-animated{will-change:transform}
         <span class="tick-bl"></span><span class="tick-br"></span>
         <div class="panel-title">Équilibrage hydraulique — relevé par vanne</div>
         <div class="table-scroll">
-          <table class="report-vanne-table" style="min-width:1080px;">
+          <table class="report-vanne-table">
+            <colgroup>
+              <col style="width:6%"/><col style="width:6%"/><col style="width:10%"/><col style="width:5%"/><col style="width:5%"/>
+              <col style="width:7%"/><col style="width:6%"/><col style="width:6%"/><col style="width:6%"/><col style="width:5%"/>
+              <col style="width:8%"/>
+              <col style="width:7%"/><col style="width:6%"/><col style="width:6%"/><col style="width:6%"/><col style="width:5%"/>
+            </colgroup>
             <thead>
               <tr>
                 <th rowspan="2">Vanne</th><th rowspan="2">Sonde</th><th rowspan="2">Marque</th><th rowspan="2">Type</th><th rowspan="2">DN</th>
